@@ -1,6 +1,44 @@
 import { db } from "@/lib/db";
 import type { AiClient } from "@/lib/ai/client";
 
+/**
+ * Creates a bank of tagged questions quickly. `published` ones are visible to students; the extra
+ * draft/in-review/retired ones must never be served.
+ */
+export async function seedBank(opts: { pre?: number; cli?: number; extraNonPublished?: boolean } = {}) {
+  const { pre = 60, cli = 60, extraNonPublished = true } = opts;
+  const rows = [];
+  const mk = (i: number, section: "PRECLINICAL" | "CLINICAL", status: "PUBLISHED" | "DRAFT" | "IN_REVIEW" | "RETIRED") => {
+    const stem = `${status} ${section} bank question ${i}: choose the best option for scenario ${i}`;
+    return {
+      stem,
+      options: [`A${i}`, `B${i}`, `C${i}`, `D${i}`],
+      correctIndex: i % 4,
+      explanation: `Explanation ${i}`,
+      section,
+      discipline: section === "PRECLINICAL" ? (i % 2 ? "Anatomy" : "Physiology") : i % 2 ? "Surgery" : "Paediatrics",
+      subtopic: section === "PRECLINICAL" ? (i % 2 ? "Thorax" : "Respiratory") : i % 2 ? "Trauma" : "Neonatology",
+      status,
+      stemNorm: stem.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim(),
+      contentHash: `bank-${status}-${section}-${i}`,
+    };
+  };
+  for (let i = 0; i < pre; i++) rows.push(mk(i, "PRECLINICAL", "PUBLISHED"));
+  for (let i = 0; i < cli; i++) rows.push(mk(i, "CLINICAL", "PUBLISHED"));
+  if (extraNonPublished) {
+    for (const status of ["DRAFT", "IN_REVIEW", "RETIRED"] as const) {
+      for (let i = 0; i < 5; i++) rows.push(mk(i, "PRECLINICAL", status), mk(i, "CLINICAL", status));
+    }
+  }
+  await db.question.createMany({ data: rows });
+}
+
+/** The display slot (0-3) that holds the correct option for a question in a session. */
+export async function correctSlot(sessionId: string, position: number) {
+  const sq = await db.sessionQuestion.findUniqueOrThrow({ where: { sessionId_position: { sessionId, position } }, include: { question: true } });
+  return sq.optionOrder.indexOf(sq.question.correctIndex);
+}
+
 /** Empties every table so each test starts from nothing. Only ever called against the _test database. */
 export async function resetDb() {
   if (!/_test\b/.test(process.env.DATABASE_URL ?? "")) throw new Error("resetDb refused: not the test database");

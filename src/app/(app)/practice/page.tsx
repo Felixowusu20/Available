@@ -1,0 +1,45 @@
+import { db } from "@/lib/db";
+import { env } from "@/lib/env";
+import { requireUser } from "@/lib/guards";
+import { SECTIONS, taxonomy } from "@/lib/taxonomy";
+import { StartPractice } from "./start-practice";
+
+export const metadata = { title: "Practice" };
+
+export default async function PracticePage() {
+  const user = await requireUser();
+
+  const [counts, bookmarkCount, answers] = await Promise.all([
+    db.question.groupBy({ by: ["section"], where: { status: "PUBLISHED" }, _count: true }),
+    db.bookmark.count({ where: { userId: user.id, question: { status: "PUBLISHED" } } }),
+    db.answer.findMany({
+      where: { userId: user.id, selectedIndex: { not: null } },
+      orderBy: { answeredAt: "desc" },
+      select: { questionId: true, correct: true },
+    }),
+  ]);
+  const available = { PRECLINICAL: 0, CLINICAL: 0 };
+  for (const c of counts) available[c.section] = c._count;
+
+  const latest = new Map<string, boolean>();
+  for (const a of answers) if (!latest.has(a.questionId)) latest.set(a.questionId, a.correct === true);
+  const missedCount = [...latest.values()].filter((ok) => !ok).length;
+
+  const tree = SECTIONS.map((section) => ({
+    section,
+    disciplines: Object.entries(taxonomy[section]).map(([name, subtopics]) => ({ name, subtopics })),
+  }));
+
+  return (
+    <main className="mx-auto max-w-4xl space-y-6 px-4 py-6">
+      <h1 className="text-2xl font-bold">Practice</h1>
+      <StartPractice
+        tree={tree}
+        secondsPerQuestion={env().EXAM_SECONDS_PER_QUESTION}
+        available={available}
+        missedCount={missedCount}
+        bookmarkCount={bookmarkCount}
+      />
+    </main>
+  );
+}

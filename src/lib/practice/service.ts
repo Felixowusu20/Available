@@ -87,14 +87,15 @@ const isRevealed = (s: { finishedAt: Date | null; mode: "LEARN" | "EXAM" }, answ
 
 function feedbackFor(
   order: number[],
-  q: { correctIndex: number; explanation: string; section: string; discipline: string; subtopic: string },
+  q: { correctIndex: number; explanation: string; section: string | null; discipline: string | null; subtopic: string | null },
 ): Feedback {
+  // Published questions always have tags (DB CHECK); the fallbacks only cover retired/legacy rows.
   return {
     correctSlot: order.indexOf(q.correctIndex),
     explanation: q.explanation,
-    section: q.section,
-    discipline: q.discipline,
-    subtopic: q.subtopic,
+    section: q.section ?? "",
+    discipline: q.discipline ?? "Untagged",
+    subtopic: q.subtopic ?? "",
   };
 }
 
@@ -128,7 +129,8 @@ export async function createSession(userId: string, input: CreateSessionInput): 
   let filter: Prisma.InputJsonValue | undefined;
 
   if (input.kind === "MOCK") {
-    const pool = await db.question.findMany({ where: { status: "PUBLISHED" }, select: { id: true, section: true } });
+    const rows = await db.question.findMany({ where: { status: "PUBLISHED", section: { not: null } }, select: { id: true, section: true } });
+    const pool = rows.flatMap((r) => (r.section ? [{ id: r.id, section: r.section }] : []));
     composed = composeMock(pool, input.size, seen);
   } else if (input.kind === "TOPIC") {
     const or: Prisma.QuestionWhereInput[] = [
@@ -367,9 +369,9 @@ export async function getResults(userId: string, id: string) {
       guessed: r.answer?.guessed ?? false,
       flagged: r.answer?.flagged ?? false,
       timeSpentMs: r.answer?.timeSpentMs ?? 0,
-      section: r.question.section,
-      discipline: r.question.discipline,
-      subtopic: r.question.subtopic,
+      section: r.question.section ?? "PRECLINICAL",
+      discipline: r.question.discipline ?? "Untagged",
+      subtopic: r.question.subtopic ?? "Untagged",
       correct: r.answer?.correct === true,
     };
   });

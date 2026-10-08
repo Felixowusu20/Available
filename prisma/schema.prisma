@@ -125,10 +125,12 @@ model Question {
   options     String[] // exactly 4, enforced by a CHECK constraint and by Zod
   correctIndex Int
   explanation String         @default("")
-  section     Section
+  // Null only while a question is untagged (fresh import). A CHECK constraint requires all
+  // three for IN_REVIEW and PUBLISHED questions.
+  section     Section?
   // Validated against taxonomy.json on every write (not a DB enum, so the taxonomy is editable).
-  discipline  String
-  subtopic    String
+  discipline  String?
+  subtopic    String?
   difficulty  Difficulty?
   source      String?
   status      QuestionStatus @default(DRAFT)

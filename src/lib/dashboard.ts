@@ -72,7 +72,7 @@ export async function getDashboard(userId: string): Promise<Dashboard> {
   const weakest = (list: WeakTopic[], n: number) => list.sort((x, y) => x.accuracy - y.accuracy || y.answered - x.answered).slice(0, n);
 
   const bySection = { PRECLINICAL: { seen: 0, total: 0 }, CLINICAL: { seen: 0, total: 0 } };
-  for (const t of totals) bySection[t.section].total = t._count;
+  for (const t of totals) if (t.section) bySection[t.section].total = t._count;
   for (const s of seenRows) bySection[s.section].seen = Number(s.seen);
 
   return {

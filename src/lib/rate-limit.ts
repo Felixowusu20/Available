@@ -29,7 +29,23 @@ export async function rateLimit(key: string, limit: number, windowSeconds: numbe
   return { ok: count <= limit, retryAfterSeconds };
 }
 
-/** Best-effort client IP behind a reverse proxy (the proxy must set X-Forwarded-For). */
+/**
+ * Read-only check: is this key already over its limit in the current window? Does not count a hit.
+ * Use with `rateLimit()` when only some outcomes (e.g. failed logins) should consume the allowance.
+ */
+export async function rateLimitPeek(key: string, limit: number, windowSeconds: number): Promise<RateLimitResult> {
+  const windowMs = windowSeconds * 1000;
+  const now = Date.now();
+  const windowStart = new Date(Math.floor(now / windowMs) * windowMs);
+  const row = await db.rateLimit.findUnique({ where: { key_windowStart: { key, windowStart } }, select: { count: true } });
+  const retryAfterSeconds = Math.max(1, Math.ceil((windowStart.getTime() + windowMs - now) / 1000));
+  return { ok: (row?.count ?? 0) < limit, retryAfterSeconds };
+}
+
+/**
+ * Best-effort client IP behind a reverse proxy. The proxy MUST overwrite X-Forwarded-For with the
+ * real client address (see DEPLOYMENT.md); otherwise a caller can spoof it and dodge rate limits.
+ */
 export function clientIp(headers: Headers): string {
   const fwd = headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0].trim();

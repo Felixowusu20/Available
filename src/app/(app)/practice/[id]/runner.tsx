@@ -41,17 +41,25 @@ export function Runner({
   const [save, setSave] = useState<SaveStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
+  // "Now" on the server's clock. Starts from the server's own timestamp and is advanced by the
+  // timer below using a measured offset, so a wrong device clock cannot distort the countdown.
+  const [now, setNow] = useState(() => Date.parse(initialState.serverNow));
 
   // Refs hold values that async callbacks and the keyboard handler must read fresh.
   const qsRef = useRef(qs);
-  qsRef.current = qs;
   const posRef = useRef(pos);
-  posRef.current = pos;
   const stateRef = useRef(state);
-  stateRef.current = state;
-  const skew = useRef(Date.parse(initialState.serverNow) - Date.now()); // server minus device clock
-  const enteredAt = useRef(Date.now());
+  useEffect(() => {
+    qsRef.current = qs;
+    posRef.current = pos;
+    stateRef.current = state;
+  });
+  const skew = useRef(0); // server clock minus device clock
+  const enteredAt = useRef(0);
+  useEffect(() => {
+    skew.current = Date.parse(initialState.serverNow) - Date.now();
+    enteredAt.current = Date.now();
+  }, [initialState.serverNow]);
   const extraMs = useRef<Record<number, number>>({}); // time spent this page-load, per position
   const pending = useRef(new Map<number, AnswerBody>());
   const flushing = useRef(false);
@@ -89,7 +97,9 @@ export function Runner({
     [id, total],
   );
 
+  // Fetching the windows around the current question is the effect's job; state is set after the await.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void ensure(pos);
     void ensure(pos + 3);
   }, [pos, qs, ensure]);
@@ -303,17 +313,23 @@ export function Runner({
   const deadline = state.deadline ? Date.parse(state.deadline) : null;
   useEffect(() => {
     if (!deadline || state.finished) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    const t = setInterval(() => setNow(Date.now() + skew.current), 1000);
     return () => clearInterval(t);
   }, [deadline, state.finished]);
-  const remaining = deadline ? deadline - (now + skew.current) : null;
+  const remaining = deadline ? deadline - now : null;
   useEffect(() => {
+    // Time is up: finishing is a deliberate side effect (it saves, closes the session and navigates).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (remaining !== null && remaining <= 0 && !finishing) void finish();
   }, [remaining, finishing, finish]);
 
   // ---- keyboard shortcuts (desktop) -----------------------------------------------------------
   const actions = useRef({ choose, go, toggleFlag, toggleBookmark, setShowMap, setDialog });
-  actions.current = { choose, go, toggleFlag, toggleBookmark, setShowMap, setDialog };
+  // Runs after every render on purpose: the single keydown listener below always calls the latest handlers.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    actions.current = { choose, go, toggleFlag, toggleBookmark, setShowMap, setDialog };
+  });
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -512,7 +528,7 @@ export function Runner({
                 <p className="text-sm text-muted">
                   {unanswered > 0 ? `${unanswered} question${unanswered === 1 ? " is" : "s are"} unanswered and will count as wrong. ` : "All questions are answered. "}
                   {flaggedCount > 0 && `${flaggedCount} flagged for review. `}
-                  You can't change answers afterwards.
+                  You can&apos;t change answers afterwards.
                 </p>
                 <div className="flex gap-3">
                   <button className="btn btn-ghost flex-1" onClick={() => setDialog(null)}>

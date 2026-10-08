@@ -19,7 +19,7 @@ export default async function PracticePage() {
     }),
   ]);
   const available = { PRECLINICAL: 0, CLINICAL: 0 };
-  for (const c of counts) available[c.section] = c._count;
+  for (const c of counts) if (c.section) available[c.section] = c._count;
 
   const latest = new Map<string, boolean>();
   for (const a of answers) if (!latest.has(a.questionId)) latest.set(a.questionId, a.correct === true);

@@ -23,7 +23,7 @@ import tagFile from "./legacy-question-tags.json";
 
 type TopicEntry = { discipline: string; subtopic?: string };
 const maps = { PRE: mapFile.PRE as Record<string, TopicEntry>, CLI: mapFile.CLI as Record<string, TopicEntry> };
-const perQuestion = tagFile.tags as Record<string, string | [string, string]>;
+const perQuestion = tagFile.tags as unknown as Record<string, string | [string, string]>;
 const SECTION: Record<"PRE" | "CLI", SectionName> = { PRE: "PRECLINICAL", CLI: "CLINICAL" };
 
 const fingerprintOf = (all: LegacyEntry[]) => createHash("sha256").update(all.map((e) => normaliseStem(e.stem)).join("\n")).digest("hex");

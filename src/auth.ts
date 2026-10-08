@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { dummyVerify, verifyPassword } from "@/lib/password";
-import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { clientIp, rateLimit, rateLimitPeek } from "@/lib/rate-limit";
 import { loginSchema } from "@/lib/validation";
 
 export class EmailNotVerified extends CredentialsSignin {
@@ -29,17 +29,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!parsed.success) return null;
         const { email, password } = parsed.data;
 
-        const ip = clientIp(request.headers);
-        const byIp = await rateLimit(`login:ip:${ip}`, 20, 15 * 60);
-        const byEmail = await rateLimit(`login:email:${email}`, 8, 15 * 60);
+        // Only FAILED attempts use up the allowance, so students who log in often are never locked out.
+        // The per-IP limit is generous because many students can share one campus or café connection.
+        const WINDOW = 15 * 60;
+        const ipKey = `login:ip:${clientIp(request.headers)}`;
+        const emailKey = `login:email:${email}`;
+        const byIp = await rateLimitPeek(ipKey, 30, WINDOW);
+        const byEmail = await rateLimitPeek(emailKey, 8, WINDOW);
         if (!byIp.ok || !byEmail.ok) throw new TooManyAttempts();
+        const fail = async () => {
+          await rateLimit(ipKey, 30, WINDOW);
+          await rateLimit(emailKey, 8, WINDOW);
+          return null;
+        };
 
         const user = await db.user.findUnique({ where: { email } });
         if (!user?.passwordHash) {
           await dummyVerify(password);
-          return null;
+          return fail();
         }
-        if (!(await verifyPassword(user.passwordHash, password))) return null;
+        if (!(await verifyPassword(user.passwordHash, password))) return fail();
         if (env().REQUIRE_EMAIL_VERIFICATION && !user.emailVerified) throw new EmailNotVerified();
 
         await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });

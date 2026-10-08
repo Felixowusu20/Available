@@ -29,6 +29,8 @@ const securityHeaders = [
 
 const config: NextConfig = {
   output: "standalone",
+  // Lets the end-to-end tests build into their own folder without disturbing a running dev server.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
   reactStrictMode: true,
   serverExternalPackages: ["@node-rs/argon2", "pg", "pino"],

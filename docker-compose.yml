@@ -3,6 +3,10 @@
 #   2. docker compose up -d --build
 # Migrations run automatically through the one-shot `migrate` service before the app starts.
 
+# A fixed project name keeps container, network and volume names stable ("mdc-db-1", "mdc_pgdata")
+# whatever the folder is called, and keeps this stack separate from docker-compose.dev.yml.
+name: mdc
+
 x-app-env: &app-env
   # Inside the compose network the database host is `db`; this overrides DATABASE_URL from .env.
   DATABASE_URL: postgresql://mdc:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/mdc?schema=public
@@ -40,7 +44,8 @@ services:
     env_file: .env
     environment: *app-env
     ports:
-      - "127.0.0.1:3000:3000" # bind to localhost; put a reverse proxy (see DEPLOYMENT.md) in front
+      # Bound to localhost only; put a reverse proxy (see DEPLOYMENT.md) in front. APP_PORT changes the host port.
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
     depends_on:
       migrate: { condition: service_completed_successfully }
 

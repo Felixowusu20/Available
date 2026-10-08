@@ -1,5 +1,31 @@
 {
-  "_help": "Maps each topic label in mdc-mock-200.html to a taxonomy entry. Run `npm run db:seed -- --report-topics` to list the topics found. Keys under PRE must map to a PRECLINICAL discipline; keys under CLI to a CLINICAL one. Both must exist in taxonomy.json.",
-  "PRE": {},
-  "CLI": {}
+  "_help": "Maps each topic label in mdc-mock-200.html to a taxonomy discipline, with an optional default subtopic. Per-question subtopics (and any discipline exceptions) live in legacy-question-tags.json. PRE topics must map to PRECLINICAL disciplines and CLI topics to CLINICAL ones.",
+  "PRE": {
+    "Anatomy": { "discipline": "Anatomy" },
+    "Embryology": { "discipline": "Embryology and histology" },
+    "Histology": { "discipline": "Embryology and histology", "subtopic": "Tissue histology" },
+    "Physiology": { "discipline": "Physiology" },
+    "Biochemistry": { "discipline": "Biochemistry" },
+    "Pathology": { "discipline": "Pathology" },
+    "Pharmacology": { "discipline": "Pharmacology" },
+    "Microbiology": { "discipline": "Microbiology" },
+    "Immunology": { "discipline": "Immunology" }
+  },
+  "CLI": {
+    "Cardiology": { "discipline": "Internal medicine", "subtopic": "Cardiology" },
+    "Respiratory": { "discipline": "Internal medicine", "subtopic": "Respiratory" },
+    "Gastroenterology": { "discipline": "Internal medicine", "subtopic": "Gastroenterology and hepatology" },
+    "Nephrology": { "discipline": "Internal medicine", "subtopic": "Nephrology" },
+    "Endocrinology": { "discipline": "Internal medicine", "subtopic": "Endocrinology" },
+    "Neurology": { "discipline": "Internal medicine", "subtopic": "Neurology" },
+    "Haematology": { "discipline": "Internal medicine", "subtopic": "Haematology" },
+    "Infectious disease": { "discipline": "Internal medicine", "subtopic": "Infectious and tropical diseases" },
+    "Obstetrics": { "discipline": "Obstetrics" },
+    "Gynaecology": { "discipline": "Gynaecology" },
+    "Paediatrics": { "discipline": "Paediatrics" },
+    "Surgery": { "discipline": "Surgery" },
+    "Psychiatry": { "discipline": "Psychiatry", "subtopic": "General psychiatry" },
+    "Public health": { "discipline": "Community health" },
+    "Ethics": { "discipline": "Ethics and forensic medicine" }
+  }
 }

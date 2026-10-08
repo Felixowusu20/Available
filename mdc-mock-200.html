@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MDC Mock: 200 MCQs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#F1F5F7; --surface:#FFFFFF; --ink:#13202A; --muted:#556572; --line:#D3DDE3;
+  --accent:#0B6E8E; --accent-ink:#FFFFFF; --accent-bg:#E3F1F6;
+  --ok:#157A4C; --ok-bg:#E1F3E9; --bad:#B53030; --bad-bg:#FBE6E6; --gold:#C48A00;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1418; --surface:#141E25; --ink:#E6EDF1; --muted:#93A5B1; --line:#27363F;
+    --accent:#4DB4D4; --accent-ink:#06222C; --accent-bg:#102A35;
+    --ok:#52C58C; --ok-bg:#12301F; --bad:#F27C7C; --bad-bg:#371A1B; --gold:#E8B52A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1418; --surface:#141E25; --ink:#E6EDF1; --muted:#93A5B1; --line:#27363F;
+  --accent:#4DB4D4; --accent-ink:#06222C; --accent-bg:#102A35;
+  --ok:#52C58C; --ok-bg:#12301F; --bad:#F27C7C; --bad-bg:#371A1B; --gold:#E8B52A;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#app{max-width:720px;margin:0 auto;padding:16px 16px 120px}
+
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
+.top h1{font-family:var(--serif);font-weight:600;font-size:1.15rem;margin:0}
+.clock{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.9rem;white-space:nowrap}
+.modebar{margin-bottom:10px;min-height:0}
+.modebtn{background:none;border:1.5px solid var(--accent);color:var(--accent);border-radius:999px;padding:4px 14px;font-size:.85rem;font-weight:500;cursor:pointer}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:10px}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+
+details.map{margin-bottom:16px}
+details.map summary{cursor:pointer;color:var(--muted);font-size:.9rem;padding:4px 0}
+.grid{display:grid;grid-template-columns:repeat(25,1fr);gap:2px;margin-top:8px}
+.grid .gap{grid-column:1/-1;height:6px}
+.tick{height:12px;border:0;padding:0;border-radius:2px;background:var(--line);cursor:pointer}
+.tick.ok{background:var(--ok)}
+.tick.bad{background:var(--bad)}
+.tick.sel{background:var(--accent)}
+.tick.guess{box-shadow:inset 0 -4px 0 var(--gold)}
+.tick.cur{outline:2px solid var(--ink);outline-offset:1px;position:relative;z-index:1}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.78rem;color:var(--muted);margin:8px 0 0}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:var(--line)}
+.legend .l-ok::before{background:var(--ok)}
+.legend .l-bad::before{background:var(--bad)}
+.legend .l-sel::before{background:var(--accent)}
+.legend .l-guess::before{background:var(--gold)}
+
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px;font-size:.88rem;color:var(--muted)}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:2px 10px;font-size:.82rem;color:var(--ink)}
+.chip.sec{border-color:var(--accent);color:var(--accent)}
+.stem{font-family:var(--serif);font-weight:400;font-size:1.28rem;line-height:1.45;margin:0 0 18px;max-width:62ch}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:14px;align-items:flex-start;width:100%;text-align:left;padding:13px 14px;min-height:54px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;cursor:pointer;transition:border-color .12s,background-color .12s}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt .ltr{flex:none;width:28px;height:28px;border-radius:7px;border:1.5px solid var(--line);display:grid;place-items:center;font-weight:600;font-size:.88rem;color:var(--muted)}
+.opt .txt{flex:1;padding-top:2px}
+.opt .tag{flex:none;font-size:.8rem;font-weight:600;padding-top:3px}
+.opt:disabled{cursor:default;color:inherit}
+.opt.sel{border-color:var(--accent);background:var(--accent-bg)}
+.opt.sel .ltr{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.opt.sel .tag{color:var(--accent)}
+.opt.ok{border-color:var(--ok);background:var(--ok-bg)}
+.opt.ok .ltr{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.ok .tag{color:var(--ok)}
+.opt.bad{border-color:var(--bad);background:var(--bad-bg)}
+.opt.bad .ltr{background:var(--bad);border-color:var(--bad);color:#fff}
+.opt.bad .tag{color:var(--bad)}
+.opt.dim{opacity:.6}
+
+.guessrow{display:flex;align-items:center;gap:10px;margin-top:14px;color:var(--muted);font-size:.92rem}
+.guessrow input{width:20px;height:20px;accent-color:var(--gold)}
+.guessrow label{cursor:pointer}
+.gtag{display:inline-block;margin-top:14px;font-size:.85rem;color:var(--gold);font-weight:600}
+
+.why{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:3px 12px 12px 3px;padding:16px 18px;animation:rise .22s ease-out}
+.why.bad{border-left-color:var(--bad)}
+.why h3{margin:0 0 6px;font-size:1rem;font-weight:600}
+.why.ok h3{color:var(--ok)}
+.why.bad h3{color:var(--bad)}
+.why p{margin:0;max-width:64ch}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.why{animation:none}.opt,.prog i{transition:none}}
+
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+.bar .in{max-width:720px;margin:0 auto;display:flex;gap:10px;justify-content:space-between}
+.btn{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:12px 18px;min-height:48px;cursor:pointer;font-weight:500}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);flex:1;font-weight:600}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent}
+
+h2.sec{font-family:var(--serif);font-size:1.2rem;margin:26px 0 10px}
+.intro h2{font-family:var(--serif);font-size:1.7rem;line-height:1.2;margin:8px 0 10px}
+.intro p{max-width:60ch;margin:0 0 12px}
+.modes{display:grid;gap:12px;margin:20px 0}
+.mode{display:block;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:16px;cursor:pointer}
+.mode:hover{border-color:var(--accent)}
+.mode b{display:block;font-family:var(--serif);font-size:1.1rem;margin-bottom:2px}
+.mode span{color:var(--muted);font-size:.93rem}
+.note{color:var(--muted);font-size:.9rem;max-width:62ch}
+
+.score{font-family:var(--serif);font-size:3.2rem;line-height:1;margin:6px 0 4px}
+.score small{font-size:1.2rem;color:var(--muted)}
+.split{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 8px}
+.split div{flex:1 1 130px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.split b{display:block;font-family:var(--serif);font-size:1.4rem;font-weight:600}
+.split span{color:var(--muted);font-size:.88rem}
+.sys{display:grid;grid-template-columns:minmax(110px,170px) 1fr 48px;gap:10px;align-items:center;margin:7px 0;font-size:.92rem}
+.sys .track{height:10px;background:var(--line);border-radius:5px;overflow:hidden}
+.sys .fill{height:100%;background:var(--ok)}
+.sys .fill.low{background:var(--bad)}
+.sys .fill.mid{background:var(--gold)}
+.sys .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+details.miss{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:8px 0}
+details.miss summary{padding:12px 14px;cursor:pointer;font-weight:500;list-style:none}
+details.miss summary::-webkit-details-marker{display:none}
+details.miss .body{padding:0 14px 14px}
+details.miss .body p{margin:6px 0}
+textarea.sum{width:100%;min-height:170px;background:var(--surface);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:12px;font:inherit;font-size:.9rem;resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.foot{margin-top:28px;text-align:center}
+.foot button{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;padding:10px}
+@media (max-width:420px){.stem{font-size:1.18rem}.sys{grid-template-columns:100px 1fr 44px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top">
+    <h1>MDC mock: 200 MCQs</h1>
+    <div class="clock" id="clock" aria-label="Elapsed time">0:00</div>
+  </div>
+  <div class="modebar" id="modebar"></div>
+  <div class="prog" aria-hidden="true"><i id="progfill"></i></div>
+  <details class="map" id="mapwrap">
+    <summary>Question map</summary>
+    <div class="grid" id="grid"></div>
+    <p class="legend"><span class="l-ok">Correct</span><span class="l-bad">Missed</span><span class="l-sel">Answered</span><span class="l-guess">Guessed</span></p>
+  </details>
+  <main id="stage" aria-live="polite"></main>
+</div>
+<div class="bar" id="bar"></div>
+
+<script>
+/* Entry format: [topic, stem, CORRECT, wrong1, wrong2, wrong3, explanation]. Options are shuffled at load with a fixed seed. */
+var PRE = [
+["Anatomy","A 24-year-old footballer falls on an outstretched hand and has tenderness in the anatomical snuffbox. Which bone is at greatest risk of avascular necrosis if fractured?","Scaphoid","Lunate","Trapezium","Hamate","The scaphoid receives its blood supply retrogradely from the distal end, so a waist or proximal pole fracture can leave the proximal fragment avascular. Snuffbox tenderness with normal early X-rays still needs immobilisation and repeat imaging."],
+["Anatomy","A man falls asleep with his arm hanging over a chair and wakes with wrist drop and numbness over the dorsum of the first web space. Which nerve was compressed?","Radial nerve in the spiral groove","Median nerve at the carpal tunnel","Ulnar nerve at the cubital tunnel","Axillary nerve at the quadrangular space","Radial nerve compression against the humerus (Saturday night palsy) paralyses the wrist and finger extensors, giving wrist drop. Triceps is usually spared because its branches leave higher up."],
+["Anatomy","After a deep laceration of the volar wrist, a patient cannot oppose the thumb and has numbness of the palmar aspect of the lateral three and a half digits. Which nerve is injured?","Median nerve","Ulnar nerve","Radial nerve","Musculocutaneous nerve","The median nerve supplies the thenar muscles (opposition, abduction) and the palmar skin of the lateral three and a half digits. It is the nerve compressed in carpal tunnel syndrome."],
+["Anatomy","A cyclist fractures the neck of the fibula and now has foot drop with numbness over the dorsum of the foot. Which nerve is injured?","Common peroneal nerve","Tibial nerve","Superior gluteal nerve","Obturator nerve","The common peroneal nerve winds around the fibular neck. Injury paralyses dorsiflexion and eversion (foot drop, steppage gait) and numbs the dorsum of the foot."],
+["Anatomy","After hip surgery a patient's pelvis drops on the opposite side when standing on the operated leg (positive Trendelenburg sign). Which nerve is injured?","Superior gluteal nerve","Inferior gluteal nerve","Obturator nerve","Femoral nerve","The superior gluteal nerve supplies gluteus medius and minimus, the hip abductors that stabilise the pelvis in single-leg stance. The inferior gluteal nerve supplies gluteus maximus."],
+["Anatomy","Intramuscular injections are given in the upper outer quadrant of the buttock mainly to avoid which structure?","Sciatic nerve","Femoral nerve","Pudendal nerve","Obturator nerve","The sciatic nerve passes through the lower medial part of the gluteal region, so the upper outer quadrant is the safe site. Injury causes foot drop and sensory loss below the knee."],
+["Anatomy","A singer cannot reach high-pitched notes after a thyroidectomy in which the superior thyroid artery was ligated close to the gland. Which nerve was injured?","External branch of the superior laryngeal nerve","Recurrent laryngeal nerve","Internal branch of the superior laryngeal nerve","Hypoglossal nerve","The external laryngeal nerve supplies cricothyroid, which tenses the vocal cords for pitch, and it runs close to the superior thyroid artery. Recurrent laryngeal injury gives hoarseness instead."],
+["Anatomy","A boy is hit on the side of the head, is briefly unconscious, recovers, then deteriorates hours later. CT shows a biconvex lesion. Which vessel is most likely torn?","Middle meningeal artery","Bridging cortical vein","Anterior cerebral artery","Basilar artery","A fracture at the pterion tears the middle meningeal artery, causing an epidural haematoma with a lucid interval. Subdural bleeds come from bridging veins and look crescentic."],
+["Anatomy","A stroke patient has contralateral weakness and sensory loss affecting the leg more than the arm. Which artery is occluded?","Anterior cerebral artery","Middle cerebral artery","Posterior cerebral artery","Basilar artery","The ACA supplies the medial frontal and parietal lobes, where the leg is represented in the motor and sensory homunculus."],
+["Anatomy","A right-handed man has right face and arm weakness greater than leg weakness, with non-fluent speech. Which vessel is involved?","Left middle cerebral artery","Left anterior cerebral artery","Left posterior cerebral artery","Right middle cerebral artery","The left MCA supplies the lateral hemisphere, including the face and arm motor areas and Broca area, giving contralateral weakness and expressive aphasia."],
+["Anatomy","A patient has sudden vertigo, hoarseness, ipsilateral facial pain and temperature loss, and contralateral loss of pain and temperature in the body. Which artery is occluded?","Posterior inferior cerebellar artery","Anterior inferior cerebellar artery","Anterior spinal artery","Superior cerebellar artery","This is lateral medullary (Wallenberg) syndrome, usually from PICA or vertebral artery occlusion."],
+["Anatomy","A stab wound causes a right-sided hemisection of the spinal cord at T10. Which finding is expected?","Loss of pain and temperature on the left below the lesion","Loss of pain and temperature on the right below the lesion","Loss of proprioception on the left below the lesion","Spastic weakness of the left leg","Spinothalamic fibres cross within a segment or two of entering the cord, so pain and temperature are lost on the opposite side. Dorsal column loss and corticospinal weakness are on the same side as the lesion."],
+["Anatomy","A patient with a chronic posterior duodenal ulcer presents with massive haematemesis. Which artery has most likely been eroded?","Gastroduodenal artery","Left gastric artery","Splenic artery","Superior mesenteric artery","The gastroduodenal artery runs behind the first part of the duodenum, so posterior ulcers can erode it and cause torrential bleeding."],
+["Anatomy","A hernia that enters the inguinal canal through the deep inguinal ring, lateral to the inferior epigastric vessels, is:","Indirect inguinal hernia","Direct inguinal hernia","Femoral hernia","Obturator hernia","Indirect hernias pass through the deep ring lateral to the inferior epigastric vessels and may reach the scrotum. Direct hernias bulge through Hesselbach triangle, medial to the vessels."],
+["Anatomy","A strangulated femoral hernia is hard to reduce because the femoral ring is bounded medially by which structure?","Lacunar ligament","Inguinal ligament","Pectineal ligament","Femoral vein","The sharp edge of the lacunar (Gimbernat) ligament forms the medial border of the femoral ring, which makes strangulation common. The femoral vein is lateral."],
+["Anatomy","A patient with a subphrenic abscess has pain at the tip of the right shoulder. This referred pain travels via which nerve roots?","C3, C4, C5 (phrenic nerve)","C5, C6, C7","T1, T2","C7, C8","The central diaphragm is supplied by the phrenic nerve (C3-5), and the skin of the shoulder tip by C3-4, so irritation is felt at the shoulder tip."],
+["Anatomy","After axillary node dissection for breast cancer, the medial border of the scapula protrudes when the patient pushes against a wall. Which nerve is injured?","Long thoracic nerve","Thoracodorsal nerve","Spinal accessory nerve","Dorsal scapular nerve","The long thoracic nerve supplies serratus anterior, which holds the scapula against the chest wall. Injury causes a winged scapula."],
+["Anatomy","Which rotator cuff muscle is most commonly torn and initiates the first 15 degrees of abduction?","Supraspinatus","Infraspinatus","Teres minor","Subscapularis","Supraspinatus passes under the acromion and is the most commonly injured rotator cuff tendon (impingement). It initiates abduction before deltoid takes over."],
+["Anatomy","A neonate delivered with shoulder dystocia holds the arm adducted, internally rotated and pronated (waiter's tip). Which roots are injured?","C5 and C6","C7 and C8","C8 and T1","T1 only","Upper trunk (C5-6) injury paralyses deltoid, biceps and the external rotators, giving the Erb palsy posture. C8-T1 injury causes claw hand (Klumpke)."],
+["Anatomy","A patient with a pituitary macroadenoma has loss of the outer visual field in both eyes. Where is the compression?","Optic chiasm","Right optic tract","Optic radiation in the temporal lobe","Occipital cortex","The chiasm carries the crossing nasal retinal fibres, which see the temporal fields. Compression from below by a pituitary tumour gives bitemporal hemianopia."],
+["Anatomy","On protrusion, the tongue deviates to the left. The lesion is:","Left hypoglossal nerve (lower motor neuron)","Right hypoglossal nerve","Left glossopharyngeal nerve","Left vagus nerve","In a unilateral hypoglossal lesion the intact genioglossus pushes the tongue toward the weak side, so it deviates toward the side of the lesion."],
+["Anatomy","A stroke patient has weakness of the lower face on the right but can wrinkle the forehead on both sides. Why?","The upper face has bilateral cortical innervation","The facial nerve nucleus was spared","The chorda tympani is intact","Trigeminal motor fibres compensate","Upper motor neuron lesions spare the forehead because the part of the facial nucleus supplying the upper face receives corticobulbar fibres from both hemispheres. Bell palsy (lower motor neuron) paralyses the whole half of the face."],
+["Embryology","A newborn with Down syndrome has bilious vomiting on day 1 and a double bubble sign on X-ray. The embryological failure is:","Failure of recanalisation of the duodenum","Failure of midgut rotation","Persistence of the vitelline duct","Failure of neural crest cell migration","Duodenal atresia results from failure of the solid stage of the duodenum to recanalise, and is associated with Down syndrome."],
+["Embryology","A neonate fails to pass meconium in 48 hours and has a distended abdomen. Rectal biopsy shows absent ganglion cells. The defect is failure of migration of:","Neural crest cells","Endodermal cells","Intermediate mesoderm","Notochordal cells","Hirschsprung disease results from failure of neural crest cells to colonise the distal bowel, leaving an aganglionic segment."],
+["Embryology","A 3-year-old has painless rectal bleeding. A technetium scan shows ectopic gastric mucosa in the ileum. This lesion is a remnant of the:","Vitelline duct","Urachus","Allantois","Cloacal membrane","Meckel diverticulum is a persistent vitelline duct remnant (rule of 2s). Ectopic gastric mucosa secretes acid, causing ulceration and bleeding."],
+["Embryology","A newborn drools, chokes on the first feed and has gas in the stomach on X-ray. The most common anomaly is:","Oesophageal atresia with a distal tracheo-oesophageal fistula","Isolated oesophageal atresia without fistula","H-type fistula without atresia","Proximal fistula with distal atresia","About 85% of cases have a proximal blind oesophageal pouch and a distal fistula to the trachea, which explains the gas in the stomach."],
+["Histology","Endoscopic biopsy in a long-standing reflux patient shows distal oesophageal squamous epithelium replaced by columnar epithelium with goblet cells. This is:","Barrett oesophagus (intestinal metaplasia)","Squamous dysplasia","Eosinophilic oesophagitis","Achalasia","Chronic acid exposure causes metaplasia to intestinal-type epithelium, which predisposes to oesophageal adenocarcinoma."],
+["Embryology","A newborn has a continuous machinery murmur. The patent vessel is derived from which embryonic structure?","Left sixth aortic arch","Right fourth aortic arch","Left fourth aortic arch","Third aortic arch","The ductus arteriosus is derived from the distal left sixth aortic arch. It closes functionally in the first days after birth and may stay patent in prematurity or after maternal rubella."],
+["Physiology","A child with nephrotic syndrome develops generalised oedema mainly because of reduced:","Plasma oncotic pressure","Capillary hydrostatic pressure","Lymphatic drainage","Interstitial oncotic pressure","Heavy albuminuria lowers plasma albumin and oncotic pressure, so Starling forces push fluid into the interstitium."],
+["Physiology","A patient has a heart rate of 80 beats/min and a stroke volume of 70 mL. What is the cardiac output?","5.6 L/min","3.5 L/min","7.0 L/min","1.1 L/min","Cardiac output = HR × SV = 80 × 70 mL = 5600 mL/min, or 5.6 L/min."],
+["Physiology","A patient with severe COPD and chronic CO₂ retention is given high-flow oxygen and becomes drowsy. Which mechanism contributes most?","Loss of hypoxic drive with worsened V/Q mismatch","Direct oxygen toxicity of the respiratory centre","Increased central chemoreceptor sensitivity","Bronchospasm caused by oxygen","In chronic hypercapnia, central chemoreceptors adapt and drive depends partly on hypoxia. Excess oxygen reduces that drive and worsens V/Q matching, so the target saturation is 88-92%."],
+["Physiology","Pulmonary embolism produces which ventilation-perfusion pattern in the affected lung zone?","High V/Q (dead space)","Low V/Q (shunt)","Normal V/Q","Zero ventilation","The occluded zone is ventilated but not perfused, so V/Q rises towards infinity (alveolar dead space)."],
+["Physiology","A patient with a large right-to-left shunt is given 100% oxygen but PaO₂ barely rises. Why?","Shunted blood bypasses ventilated alveoli","Haemoglobin is already fully saturated","Diffusion across the membrane is impaired","Alveolar ventilation is too high","Blood passing through the shunt never contacts alveolar gas, so raising inspired oxygen has little effect on the mixed arterial value."],
+["Physiology","A child with severe watery diarrhoea has pH 7.25, HCO₃⁻ 12 mmol/L and a normal anion gap. The most likely cause of the acidosis is:","Faecal bicarbonate loss","Lactic acid accumulation","Ketone production","Renal failure","Diarrhoea loses bicarbonate, giving a hyperchloraemic (normal anion gap) metabolic acidosis."],
+["Physiology","Persistent vomiting in an infant with pyloric stenosis causes which metabolic picture?","Hypochloraemic, hypokalaemic metabolic alkalosis","Hyperchloraemic metabolic acidosis","Respiratory acidosis","High anion gap metabolic acidosis","Loss of gastric HCl and volume depletion with aldosterone excess give a metabolic alkalosis with low chloride and low potassium."],
+["Physiology","A hypertensive patient has a renal artery stenosis. The hypertension results mainly from increased:","Renin release and angiotensin II","Antidiuretic hormone","Atrial natriuretic peptide","Parathyroid hormone","Reduced renal perfusion pressure activates the juxtaglomerular cells, raising renin, angiotensin II and aldosterone."],
+["Physiology","An anxious young woman hyperventilates and develops perioral tingling and carpopedal spasm. The mechanism is:","Reduced ionised calcium due to alkalosis","Reduced total body calcium","Hyperkalaemia","Hypermagnesaemia","Respiratory alkalosis increases albumin binding of calcium, lowering the free ionised fraction and causing neuromuscular irritability."],
+["Physiology","Which substance's clearance best measures the glomerular filtration rate?","Inulin","Para-aminohippuric acid","Glucose","Urea","Inulin is freely filtered and neither secreted nor reabsorbed. PAH clearance estimates renal plasma flow, and creatinine clearance is the clinical approximation of GFR."],
+["Physiology","In a water deprivation test, a patient's urine remains dilute but concentrates after desmopressin. The diagnosis is:","Central diabetes insipidus","Nephrogenic diabetes insipidus","Primary polydipsia","SIADH","A response to desmopressin shows the kidney can respond to ADH, so the defect is a lack of ADH secretion (central DI). In nephrogenic DI the kidney does not respond."],
+["Physiology","What happens to the resting membrane potential of cardiac myocytes in hyperkalaemia?","It becomes less negative","It becomes more negative","It is unchanged","It reverses polarity","Raised extracellular K⁺ reduces the K⁺ gradient and depolarises the cells. Persistent depolarisation inactivates sodium channels, causing conduction block and arrest."],
+["Physiology","A patient with severe anaemia (Hb 5 g/dL) has a normal PaO₂ of 13 kPa. Which value is reduced?","Arterial oxygen content","Arterial oxygen tension","Alveolar PO₂","Oxygen saturation of the haemoglobin present","PaO₂ reflects dissolved oxygen only. Oxygen content and delivery depend on haemoglobin concentration and are reduced in anaemia, while saturation of the haemoglobin that is present stays normal."],
+["Physiology","In myasthenia gravis, weakness worsens with repeated use because antibodies block:","Nicotinic acetylcholine receptors at the neuromuscular junction","Presynaptic voltage-gated calcium channels","Acetylcholine synthesis","Muscarinic receptors","Autoantibodies against postsynaptic nicotinic ACh receptors reduce end-plate potentials. Lambert-Eaton syndrome targets presynaptic calcium channels."],
+["Physiology","Several years after total gastrectomy, a patient develops macrocytic anaemia. Which gastric product is missing?","Intrinsic factor from parietal cells","Pepsinogen from chief cells","Gastrin from G cells","Bicarbonate from mucous cells","Intrinsic factor is needed for vitamin B12 absorption in the terminal ileum. Loss leads to B12 deficiency once body stores are used up."],
+["Physiology","A jaundiced patient has dark urine, pale stools and itching. The expected bilirubin pattern is:","Raised conjugated bilirubin with absent urinary urobilinogen","Raised unconjugated bilirubin with raised urinary urobilinogen","Raised unconjugated bilirubin with no bilirubinuria","Normal conjugated bilirubin with raised urobilinogen","Obstruction prevents conjugated bilirubin reaching the gut, so stools lose pigment, urine contains conjugated bilirubin and urobilinogen is absent."],
+["Biochemistry","A neonate becomes lethargic after feeds, with hyperammonaemia, raised orotic acid and low urea. Which enzyme is deficient?","Ornithine transcarbamylase","Carbamoyl phosphate synthetase I","Arginase","Phenylalanine hydroxylase","OTC deficiency (X-linked) lets carbamoyl phosphate spill into pyrimidine synthesis, raising orotic acid. In CPS-I deficiency orotic acid is low."],
+["Biochemistry","A child has a musty body odour, fair skin and developmental delay. Which amino acid becomes essential?","Tyrosine","Tryptophan","Histidine","Methionine","Phenylalanine hydroxylase deficiency (PKU) blocks conversion of phenylalanine to tyrosine. Treatment is a low-phenylalanine diet with tyrosine supplementation."],
+["Biochemistry","A man has urine that darkens on standing, bluish ear cartilage and early arthritis. Which enzyme is deficient?","Homogentisate oxidase","Fumarylacetoacetate hydrolase","Tyrosinase","Cystathionine synthase","Alkaptonuria results from homogentisate oxidase deficiency. Homogentisic acid polymerises and deposits in cartilage (ochronosis)."],
+["Biochemistry","A subsistence farmer eating mainly maize develops photosensitive dermatitis, diarrhoea and dementia. Which vitamin is deficient?","Niacin","Thiamine","Riboflavin","Pyridoxine","Pellagra occurs where maize is the main staple, because its niacin is bound and its tryptophan content is low."],
+["Biochemistry","Bleeding gums, perifollicular haemorrhages and poor wound healing result from impaired:","Hydroxylation of proline and lysine in collagen","Carboxylation of clotting factors","Transamination","Methylation of homocysteine","Vitamin C is a cofactor for prolyl and lysyl hydroxylases. Without it collagen is unstable (scurvy)."],
+["Biochemistry","A home-delivered newborn who received no vitamin K bleeds on day 4. Which clotting factors are deficient?","II, VII, IX and X","V, VIII and XI","I, V and XIII","VIII, IX and XI","Vitamin K carboxylates glutamate residues on factors II, VII, IX, X and on proteins C and S. Newborns have low stores, so prophylaxis is given at birth."],
+["Biochemistry","A boy develops haemolysis with Heinz bodies after taking primaquine. The deficient pathway normally supplies:","NADPH to keep glutathione reduced","ATP for the red cell membrane pump","Acetyl-CoA","Pyruvate","G6PD deficiency impairs the pentose phosphate pathway, so red cells lack NADPH and cannot defend against oxidant stress."],
+["Biochemistry","A 25-year-old has tendon xanthomas and an LDL cholesterol of 9 mmol/L. The most likely defect is in:","LDL receptor","Lipoprotein lipase","Apolipoprotein A-I","Cholesteryl ester transfer protein","Familial hypercholesterolaemia results from LDL receptor defects, causing premature coronary disease and tendon xanthomas."],
+["Biochemistry","A urine nitroprusside test may underestimate ketosis in DKA because it does not detect:","β-hydroxybutyrate","Acetoacetate","Acetone","Glucose","Nitroprusside reacts with acetoacetate (and weakly with acetone). In DKA most ketone is β-hydroxybutyrate, so blood ketone measurement is more reliable."],
+["Biochemistry","Megaloblastic anaemia in folate deficiency arises from impaired synthesis of:","Thymidylate for DNA","Haem","Globin chains","Heparan sulphate","Folate is needed to make dTMP from dUMP. Impaired DNA synthesis with preserved RNA synthesis gives large, immature red cell precursors."],
+["Biochemistry","A boy with self-mutilation, intellectual disability, gouty arthritis and orange crystals in his nappies has deficiency of:","HGPRT","Xanthine oxidase","Adenosine deaminase","PRPP synthetase","Lesch-Nyhan syndrome (X-linked HGPRT deficiency) blocks purine salvage, causing overproduction of uric acid."],
+["Biochemistry","A teenager has hepatitis, tremor and Kayser-Fleischer rings. The defect is in:","ATP7B copper transporter","HFE gene","Alpha-1 antitrypsin","Collagen synthesis","Wilson disease results from ATP7B mutation, impairing biliary copper excretion and ceruloplasmin incorporation. Copper accumulates in liver, brain and cornea."],
+["Pathology","A patient dies 3 days after an anterior MI. Histology of the infarct would most likely show:","Coagulative necrosis with neutrophil infiltration","Early granulation tissue with macrophages","Dense collagenous scar","Normal myocardium with wavy fibres only","Days 1-3 show coagulative necrosis and neutrophils. Macrophages and granulation tissue appear at 7-10 days, and scar forms after weeks."],
+["Pathology","A man dies suddenly 5 days after a large anterior MI with haemopericardium. The cause is:","Rupture of the ventricular free wall","Papillary muscle rupture","Dressler syndrome","Ventricular aneurysm","Free-wall rupture typically occurs 3-7 days after MI, when necrotic myocardium is softened by macrophage activity, causing tamponade."],
+["Pathology","A child has migratory polyarthritis and carditis 3 weeks after a sore throat. Which finding is characteristic of this disease?","Aschoff bodies","Warthin-Finkeldey cells","Negri bodies","Councilman bodies","Rheumatic fever produces Aschoff bodies, granulomas containing Anitschkow (caterpillar) cells, in the heart."],
+["Pathology","A passenger develops a deep vein thrombosis after a 14-hour flight. The main Virchow factor is:","Venous stasis","Endothelial injury","Protein C deficiency","Turbulent arterial flow","Prolonged immobility slows venous flow. Virchow triad comprises stasis, endothelial injury and hypercoagulability."],
+["Pathology","A man with chronic hepatitis B cirrhosis develops a new liver mass and an AFP of 1,500 ng/mL. The diagnosis is:","Hepatocellular carcinoma","Cholangiocarcinoma","Hepatic adenoma","Metastatic colorectal cancer","HBV is a leading cause of HCC in Ghana and sub-Saharan Africa, and AFP is a useful tumour marker."],
+["Pathology","A patient with AIDS has purple-brown skin plaques. Biopsy shows spindle cells and slit-like vascular spaces. The associated virus is:","HHV-8","EBV","HPV 16","CMV","Kaposi sarcoma is caused by HHV-8 (KSHV) and is an AIDS-defining illness."],
+["Pathology","Which histological type accounts for most cervical cancers?","Squamous cell carcinoma","Adenocarcinoma","Small cell carcinoma","Clear cell carcinoma","Squamous carcinoma accounts for about 80%, arising from the transformation zone after persistent high-risk HPV infection."],
+["Pathology","Benign prostatic hyperplasia arises mainly in which zone?","Transition zone","Peripheral zone","Central zone","Anterior fibromuscular stroma","BPH affects the periurethral transition zone, hence the obstructive urinary symptoms. Most prostate cancers arise in the peripheral zone."],
+["Pathology","Familial adenomatous polyposis results from a germline mutation in:","APC gene","MLH1","TP53","BRCA1","Loss of APC starts the adenoma-carcinoma sequence. FAP gives hundreds of colonic polyps, and prophylactic colectomy is advised."],
+["Pathology","Chronic H. pylori gastritis increases the risk of gastric adenocarcinoma and:","MALT lymphoma","Hodgkin lymphoma","Carcinoid syndrome","Gastrointestinal stromal tumour","H. pylori drives chronic lymphoid proliferation, which can progress to low-grade B-cell MALT lymphoma that often regresses after eradication."],
+["Pathology","A 5-year-old has facial oedema and heavy proteinuria. Light microscopy is normal. Electron microscopy would show:","Effacement of podocyte foot processes","Subepithelial humps","Basement membrane splitting","Mesangial IgA deposits","This is minimal change disease, the commonest cause of nephrotic syndrome in children, and it responds to steroids."],
+["Pathology","A 7-year-old has haematuria, hypertension and oedema 2 weeks after impetigo. Biopsy findings include:","Subepithelial humps with granular IgG and C3","Linear IgG along the basement membrane","Spike-and-dome pattern with no cells","Normal glomeruli","Post-streptococcal glomerulonephritis shows immune-complex deposits (granular immunofluorescence) and low C3."],
+["Pathology","A fisherman from an endemic area has painless terminal haematuria and a bladder mass. The associated histology is most likely:","Squamous cell carcinoma","Urothelial carcinoma","Small cell carcinoma","Adenocarcinoma of the urachus","Chronic S. haematobium infection causes squamous metaplasia and squamous carcinoma of the bladder."],
+["Pathology","An adult with long-standing sickle cell anaemia has a small, fibrotic spleen. This is due to:","Repeated infarction (autosplenectomy)","Congenital absence","Hypersplenism","Amyloid replacement","Sickled cells repeatedly occlude splenic microvasculature, causing fibrosis and functional hyposplenism, which increases the risk of infection with encapsulated organisms."],
+["Pathology","A patient with chronic osteomyelitis develops nephrotic syndrome. Congo red shows apple-green birefringence. The amyloid protein is:","AA protein","AL protein","Aβ2-microglobulin","Transthyretin","Reactive systemic (secondary) amyloidosis from chronic inflammation deposits AA protein derived from serum amyloid A."],
+["Pathology","The most common type of invasive breast cancer is:","Invasive ductal carcinoma (no special type)","Invasive lobular carcinoma","Medullary carcinoma","Tubular carcinoma","Invasive ductal carcinoma NST makes up about 70-80% of cases."],
+["Pharmacology","A patient on warfarin starts rifampicin for TB and the INR falls. The reason is:","CYP450 induction speeds warfarin metabolism","Reduced absorption of warfarin","Displacement from albumin","Increased renal excretion of warfarin","Rifampicin induces hepatic enzymes, lowering warfarin levels. Doses need adjusting with INR monitoring."],
+["Pharmacology","The antidote for heparin overdose is:","Protamine sulphate","Vitamin K","Idarucizumab","Tranexamic acid","Protamine is a positively charged protein that binds and neutralises heparin. Vitamin K reverses warfarin."],
+["Pharmacology","A patient on digoxin and furosemide develops nausea, yellow vision and ventricular ectopics. Which electrolyte abnormality predisposes to this?","Hypokalaemia","Hypernatraemia","Hypermagnesaemia","Hypocalcaemia","Low potassium increases digoxin binding to Na⁺/K⁺-ATPase and so increases toxicity. Loop diuretics cause hypokalaemia."],
+["Pharmacology","Metformin should be stopped or avoided in which situation because of the risk of lactic acidosis?","eGFR below 30 mL/min","Obesity","Mild proteinuria","Age of 45 years","Metformin is renally excreted. Severe renal impairment, hypoxia and sepsis raise the risk of accumulation and lactic acidosis."],
+["Pharmacology","The most important adverse effect of glibenclamide in an elderly patient with renal impairment is:","Hypoglycaemia","Lactic acidosis","Diarrhoea","Weight loss","Sulfonylureas stimulate insulin release regardless of glucose level, and active metabolites accumulate in renal impairment, so hypoglycaemia can be prolonged."],
+["Pharmacology","Gentamicin therapy requires monitoring because of:","Nephrotoxicity and ototoxicity","Hepatotoxicity and pancreatitis","Pulmonary fibrosis","Photosensitivity","Aminoglycosides accumulate in renal tubular cells and the inner ear. Monitor levels and creatinine, and avoid combining with loop diuretics."],
+["Pharmacology","Which antibiotic class should be avoided in pregnancy and young children because it affects bone and teeth?","Tetracyclines","Penicillins","Macrolides","Cephalosporins","Tetracyclines chelate calcium and deposit in developing bone and teeth, causing discolouration and enamel hypoplasia."],
+["Pharmacology","A neonate on chloramphenicol develops cyanosis, hypotension and abdominal distension (grey baby syndrome). The mechanism is:","Immature hepatic glucuronidation","Renal tubular acidosis","Direct bone marrow suppression","Inhibition of cholinesterase","Neonates lack sufficient glucuronyl transferase, so chloramphenicol accumulates to toxic levels."],
+["Pharmacology","Phenytoin doses must be increased cautiously because it shows:","Saturable (zero-order) kinetics at therapeutic levels","First-order kinetics at all doses","Renal elimination of unchanged drug","Very low protein binding","Hepatic metabolism saturates in the therapeutic range, so small dose increases cause disproportionate rises in plasma concentration and toxicity."],
+["Pharmacology","Which antiepileptic drug is most strongly associated with neural tube defects when taken in pregnancy?","Sodium valproate","Lamotrigine","Levetiracetam","Phenobarbital","Valproate carries the highest risk of neural tube defects and neurodevelopmental effects, so avoid it in women of childbearing age where possible."],
+["Pharmacology","Which drug increases serum lithium levels and may cause toxicity?","Hydrochlorothiazide","Amlodipine","Omeprazole","Salbutamol","Thiazides reduce lithium clearance by increasing proximal reabsorption. NSAIDs and ACE inhibitors do the same."],
+["Pharmacology","Tremor and hypokalaemia after nebulised salbutamol are due to:","β₂-receptor stimulation driving K⁺ into cells","α₁-receptor stimulation","Muscarinic blockade","Inhibition of Na⁺/K⁺-ATPase","β₂ agonists stimulate Na⁺/K⁺-ATPase, shifting potassium into cells. This is exploited in treating hyperkalaemia."],
+["Pharmacology","A patient on glyceryl trinitrate for angina must avoid which drug because of profound hypotension?","Sildenafil","Aspirin","Atenolol","Simvastatin","Nitrates and PDE-5 inhibitors both increase cGMP signalling, so combined use can cause severe hypotension."],
+["Pharmacology","A patient on carbimazole develops fever and a sore throat. The correct action is:","Stop carbimazole and check a full blood count urgently","Continue and give paracetamol","Increase the carbimazole dose","Switch to levothyroxine","This may signal agranulocytosis, a rare but serious adverse effect. Stop the drug and check the neutrophil count."],
+["Microbiology","A 6-year-old in northern Ghana in the dry season has fever, headache, neck stiffness and a purpuric rash. CSF shows Gram-negative diplococci. The organism is:","Neisseria meningitidis","Streptococcus pneumoniae","Haemophilus influenzae","Listeria monocytogenes","Meningococcal meningitis epidemics affect the African meningitis belt, including northern Ghana. Close contacts need chemoprophylaxis."],
+["Microbiology","An AIDS patient with CD4 of 40 has headache and fever. India ink on CSF shows encapsulated yeasts. The organism is:","Cryptococcus neoformans","Candida albicans","Histoplasma capsulatum","Aspergillus fumigatus","Cryptococcal meningitis shows encapsulated budding yeast on India ink and a positive CSF cryptococcal antigen."],
+["Microbiology","A patient with typhoid fever suddenly develops severe abdominal pain and shock in the third week. The likely complication is:","Intestinal perforation","Appendicitis","Pancreatitis","Hepatic abscess","Salmonella Typhi invades the Peyer patches of the ileum, causing necrosis and, in the third week, perforation or haemorrhage."],
+["Microbiology","A child from a rural swampy area in Ghana has a painless chronic skin ulcer with undermined edges. The organism is:","Mycobacterium ulcerans","Mycobacterium leprae","Treponema pertenue","Leishmania donovani","Buruli ulcer is caused by M. ulcerans, which produces mycolactone toxin. It is endemic in parts of Ghana and is treated with rifampicin plus clarithromycin."],
+["Microbiology","The vector of Onchocerca volvulus is:","Simulium (blackfly)","Anopheles mosquito","Glossina (tsetse fly)","Culex mosquito","Blackflies breed in fast-flowing rivers. Onchocerciasis causes itchy skin disease and blindness, and is treated with ivermectin."],
+["Microbiology","A neonate has trismus and spasms 7 days after the umbilical cord was cut with an unsterilised blade. Tetanus toxin acts by:","Blocking release of inhibitory neurotransmitters (GABA and glycine)","Blocking acetylcholine release at the neuromuscular junction","Inhibiting acetylcholinesterase","Activating Gs proteins","Tetanospasmin cleaves SNARE proteins in inhibitory interneurons, leaving motor neurons unopposed and causing spastic paralysis. Botulinum toxin blocks acetylcholine release, causing flaccid paralysis."],
+["Microbiology","A man in northern Ghana has a large hydrocele and lymphoedema of the leg. The likely organism is:","Wuchereria bancrofti","Onchocerca volvulus","Loa loa","Dracunculus medinensis","W. bancrofti, transmitted by mosquitoes, causes lymphatic filariasis. Control relies on mass drug administration with albendazole and ivermectin."],
+["Microbiology","Frothy yellow-green vaginal discharge with a strawberry cervix and motile flagellates on a wet mount is caused by:","Trichomonas vaginalis","Candida albicans","Gardnerella vaginalis","Chlamydia trachomatis","Trichomonas is a sexually transmitted flagellated protozoan, treated with metronidazole for the patient and partner."],
+["Microbiology","An AIDS patient with CD4 of 80 has dry cough, exertional dyspnoea, hypoxia and bilateral interstitial infiltrates. The organism is:","Pneumocystis jirovecii","Streptococcus pneumoniae","Mycobacterium avium complex","Klebsiella pneumoniae","PCP occurs with CD4 below 200. Treat with high-dose cotrimoxazole, plus steroids if hypoxic."],
+["Microbiology","Cerebral malaria pathogenesis involves infected red cells binding to cerebral capillary endothelium via:","PfEMP1 (cytoadherence)","Duffy antigen","Merozoite surface protein 1 only","Circumsporozoite protein","P. falciparum expresses PfEMP1 on the red cell surface, mediating sequestration in the microvasculature of the brain and other organs."],
+["Immunology","HIV enters helper T cells by binding of viral gp120 to:","CD4 receptor","CD8 receptor","CD3 complex","CD19","gp120 binds CD4 and then a coreceptor (CCR5 or CXCR4), followed by gp41-mediated fusion."],
+["Immunology","Anaphylaxis after a bee sting is mediated by:","Cross-linking of IgE on mast cells","Immune complex deposition","Cytotoxic T cells","Complement-mediated lysis","Type I hypersensitivity involves allergen cross-linking of IgE on mast cells, causing histamine release with vasodilation and bronchospasm. Treat with IM adrenaline."],
+["Immunology","A transplanted kidney turns blue and mottled within minutes of reperfusion. The mechanism is:","Preformed antibodies against donor antigens","T-cell mediated cellular rejection","Chronic vascular remodelling","Graft-versus-host disease","Hyperacute rejection is a type II hypersensitivity from preformed anti-HLA or ABO antibodies, which is why crossmatching is done before transplant."],
+["Immunology","Haemolytic disease of the newborn due to Rh incompatibility is which type of hypersensitivity?","Type II","Type I","Type III","Type IV","Maternal IgG anti-D crosses the placenta and binds fetal Rh-positive red cells, causing antibody-mediated haemolysis."]
+];
+
+var CLI = [
+["Cardiology","A 68-year-old with hypertension has sudden breathlessness, pink frothy sputum, bilateral crackles and BP 180/100. Initial treatment is:","Sit upright, oxygen, IV furosemide and nitrate","IV 0.9% saline bolus","IV metoprolol","Oral amlodipine","Acute pulmonary oedema needs oxygen, an upright position, an IV loop diuretic and a vasodilator (GTN) to reduce preload and afterload. Avoid fluid boluses and negative inotropes."],
+["Cardiology","A patient with atrial fibrillation at 170/min is hypotensive, confused and has chest pain. Management is:","Synchronised DC cardioversion","IV digoxin","Oral bisoprolol","IV adenosine","Haemodynamic instability with a tachyarrhythmia requires immediate synchronised cardioversion under sedation."],
+["Cardiology","A 40-year-old woman with rheumatic mitral stenosis develops atrial fibrillation. The anticoagulant of choice is:","Warfarin","Rivaroxaban","Aspirin alone","Clopidogrel","In moderate-to-severe rheumatic mitral stenosis, vitamin K antagonists are preferred over DOACs."],
+["Cardiology","A patient with a known bicuspid aortic valve develops fever and a new murmur two weeks after dental extraction. The most likely organism is:","Viridans streptococci","Staphylococcus aureus","Enterococcus faecalis","Candida albicans","Subacute endocarditis on abnormal valves after dental procedures is typically due to viridans group streptococci. S. aureus dominates in IV drug users and acute disease."],
+["Cardiology","Which drug has been shown to reduce mortality in heart failure with reduced ejection fraction?","Bisoprolol","Furosemide","Digoxin","Amlodipine","Evidence-based beta-blockers (bisoprolol, carvedilol, metoprolol succinate), ACE inhibitors or ARBs, MRAs and SGLT2 inhibitors reduce mortality. Loop diuretics give symptom relief only."],
+["Cardiology","A man has exertional chest pain relieved by rest. The best immediate relief during an attack is:","Sublingual glyceryl trinitrate","Oral atenolol","Oral amlodipine","Oral aspirin","Sublingual GTN rapidly dilates veins and coronary arteries, reducing preload and myocardial oxygen demand."],
+["Cardiology","After a stab wound to the chest, a man has hypotension, distended neck veins and muffled heart sounds. Immediate treatment is:","Pericardiocentesis (or thoracotomy)","IV furosemide","Chest X-ray first","Oral aspirin","Beck triad indicates cardiac tamponade. Relieve it urgently, since fluid resuscitation is only a temporising measure."],
+["Cardiology","Secondary prophylaxis against recurrent rheumatic fever consists of:","Intramuscular benzathine penicillin every 3-4 weeks","Oral amoxicillin as needed","Annual ceftriaxone","Daily aspirin","Regular benzathine penicillin G prevents recurrent streptococcal infections and progression of rheumatic heart disease, often for years depending on cardiac involvement."],
+["Cardiology","A stable patient has a regular narrow-complex tachycardia at 180/min. The first step is:","Vagal manoeuvres","IV amiodarone","DC cardioversion","IV verapamil in all cases","For stable SVT, try vagal manoeuvres (modified Valsalva) first, then IV adenosine if they fail."],
+["Respiratory","A patient with a COPD exacerbation is hypoxic. The target oxygen saturation is:","88-92%","94-98%","100%","80-85%","Controlled oxygen with a Venturi mask avoids worsening hypercapnia in patients at risk of CO₂ retention."],
+["Respiratory","A previously well 30-year-old has mild community-acquired pneumonia (CURB-65 score 0). First-line treatment is:","Oral amoxicillin","IV ceftriaxone and azithromycin","Oral ciprofloxacin","IV gentamicin","Mild CAP is treated as an outpatient with oral amoxicillin (a macrolide or doxycycline if allergic)."],
+["Respiratory","Pleural fluid from a patient with weight loss shows protein 48 g/L, predominant lymphocytes and a high ADA. The most likely diagnosis is:","Tuberculous pleural effusion","Heart failure","Nephrotic syndrome","Parapneumonic effusion","A lymphocytic exudate with a high ADA strongly suggests TB pleuritis."],
+["Respiratory","A patient with confirmed pulmonary embolism is haemodynamically stable. Initial treatment is:","Therapeutic anticoagulation (LMWH or a DOAC)","Thrombolysis","Aspirin","IV fluids only","Stable PE is treated with anticoagulation. Thrombolysis is reserved for haemodynamic instability."],
+["Respiratory","For a patient with cough lasting 3 weeks and night sweats, the preferred initial test for pulmonary TB in Ghana is:","Sputum Xpert MTB/RIF","Tuberculin skin test","Chest X-ray alone","Sputum culture only","Xpert MTB/RIF gives rapid diagnosis and detects rifampicin resistance. Smear microscopy and chest X-ray are adjuncts."],
+["Respiratory","The mainstay of preventive treatment in persistent asthma is:","Inhaled corticosteroid","Oral montelukast alone","Regular oral salbutamol","Theophylline","Inhaled corticosteroids reduce airway inflammation, exacerbations and mortality. Short-acting β₂ agonists are only for relief."],
+["Respiratory","A smoker with an apical lung tumour has ptosis, miosis and anhidrosis on the right. This is due to:","Compression of the sympathetic chain","Compression of the phrenic nerve","Compression of the recurrent laryngeal nerve","Superior vena cava obstruction","A Pancoast tumour invades the cervical sympathetic chain, causing Horner syndrome."],
+["Respiratory","A toddler chokes on a groundnut and then wheezes unilaterally. Where does a foreign body most often lodge?","Right main bronchus","Left main bronchus","Trachea above the carina","Larynx","The right main bronchus is wider, shorter and more vertical than the left."],
+["Gastroenterology","A cirrhotic patient presents with haematemesis and suspected variceal bleeding. Along with resuscitation, which should be started?","IV terlipressin or octreotide with antibiotic prophylaxis","Oral propranolol","IV omeprazole alone","NSAIDs","Splanchnic vasoconstrictors reduce portal pressure and antibiotics reduce infection and mortality. Endoscopic band ligation follows."],
+["Gastroenterology","A man has epigastric pain radiating to the back and a lipase 6 times the upper limit. Initial management is:","Aggressive IV fluids and analgesia","Emergency laparotomy","Prophylactic antibiotics in all patients","Nil by mouth with no fluids","Acute pancreatitis is managed supportively with early IV crystalloids (Ringer lactate), analgesia and early nutrition. Common causes are gallstones and alcohol."],
+["Gastroenterology","A patient has fever, right upper quadrant pain and a positive Murphy sign. The best first imaging test is:","Ultrasound of the abdomen","CT with contrast","Plain abdominal X-ray","MRI of the brain","Ultrasound detects gallstones, wall thickening and pericholecystic fluid in acute cholecystitis."],
+["Gastroenterology","Fever, jaundice and right upper quadrant pain describe:","Charcot triad of ascending cholangitis","Reynolds pentad","Beck triad","Whipple triad","Ascending cholangitis needs antibiotics and biliary decompression (ERCP). Reynolds pentad adds shock and confusion."],
+["Gastroenterology","A cirrhotic with ascites has fever and abdominal pain. Ascitic fluid neutrophils are 400/mm³. Treatment is:","IV ceftriaxone","Large-volume paracentesis only","IV furosemide","Oral lactulose alone","A neutrophil count of 250/mm³ or more indicates spontaneous bacterial peritonitis, treated with a third-generation cephalosporin and albumin."],
+["Gastroenterology","A cirrhotic patient becomes confused and has asterixis. Treatment is:","Lactulose","IV diazepam","Strict protein avoidance","Furosemide","Lactulose reduces ammonia absorption. Look for and treat precipitants such as infection, GI bleeding, constipation and electrolyte disturbance."],
+["Gastroenterology","A young man has fever and tender hepatomegaly with a solitary right-lobe liver abscess. Treatment is:","Metronidazole","Oral albendazole","Amphotericin B","Praziquantel","Amoebic liver abscess due to Entamoeba histolytica responds to metronidazole, followed by a luminal amoebicide."],
+["Gastroenterology","A patient with chronic hepatitis B, cirrhosis and detectable HBV DNA should receive:","Tenofovir","Lamivudine monotherapy","Ribavirin","Sofosbuvir","Tenofovir (or entecavir) has a high barrier to resistance and is first-line for chronic hepatitis B needing treatment."],
+["Nephrology","A dehydrated patient has oliguria with urine sodium 10 mmol/L and FeNa below 1%. This is:","Prerenal AKI","Acute tubular necrosis","Post-renal AKI","Acute interstitial nephritis","Intact tubular function conserves sodium. Treat by correcting the volume depletion."],
+["Nephrology","Normocytic anaemia in stage 5 CKD is mainly due to:","Reduced erythropoietin production","Iron overload","Vitamin B12 deficiency","Haemolysis","Failing kidneys make less erythropoietin. Treat with erythropoiesis-stimulating agents after correcting iron deficiency."],
+["Nephrology","First-line treatment for steroid-sensitive nephrotic syndrome in a child is:","Prednisolone","Cyclophosphamide","Furosemide alone","Enalapril alone","Oral prednisolone induces remission in most children with minimal change disease."],
+["Nephrology","A patient with small cell lung cancer has serum sodium 122 mmol/L, is euvolaemic, and has urine osmolality 500 mOsm/kg. Management is:","Fluid restriction","Rapid 3% saline bolus in all cases","Normal saline infusion","Furosemide with oral salt","SIADH is treated by fluid restriction. Hypertonic saline is reserved for severe symptomatic hyponatraemia, with careful control of the correction rate."],
+["Nephrology","First-line analgesia for renal colic is:","NSAID (diclofenac)","Paracetamol alone","Oral tramadol","Antispasmodic alone","NSAIDs are at least as effective as opioids and reduce ureteric smooth muscle spasm."],
+["Nephrology","Which is an indication for urgent dialysis?","Hyperkalaemia refractory to medical treatment","Mild proteinuria","Creatinine of 200 µmol/L alone","Asymptomatic hypocalcaemia","Refractory hyperkalaemia, fluid overload, severe acidosis, uraemic pericarditis or encephalopathy, and certain toxins are urgent indications."],
+["Endocrinology","An unconscious diabetic has a capillary glucose of 1.8 mmol/L and IV access. Immediate treatment is:","IV dextrose (for example 10% or 50%)","Subcutaneous insulin","Oral glucose gel","IV 0.9% saline","Severe hypoglycaemia with reduced consciousness needs IV dextrose (or IM glucagon without access)."],
+["Endocrinology","A woman has fatigue, weight gain, cold intolerance, TSH 45 mU/L and low free T4. Treatment is:","Levothyroxine","Carbimazole","Propranolol alone","Radioiodine","Primary hypothyroidism is treated with lifelong levothyroxine titrated to TSH."],
+["Endocrinology","A patient on long-term steroids stops them abruptly and presents with hypotension, vomiting and hypoglycaemia. Immediate treatment is:","IV hydrocortisone and IV fluids","Oral prednisolone 5 mg","IV insulin","IV propranolol","Adrenal crisis requires immediate IV hydrocortisone 100 mg and saline resuscitation, without waiting for tests."],
+["Endocrinology","A first-line screening test for Cushing syndrome is:","1 mg overnight dexamethasone suppression test","Random serum cortisol","Fasting glucose","ACTH stimulation test","Failure of cortisol to suppress after dexamethasone suggests endogenous cortisol excess. Late-night salivary cortisol and 24-hour urinary free cortisol are alternatives."],
+["Endocrinology","A newly diagnosed obese patient with type 2 diabetes has normal renal function. The first-line drug is:","Metformin","Insulin glargine","Glibenclamide","Pioglitazone","Metformin is first-line: weight neutral, no hypoglycaemia and a cardiovascular benefit."],
+["Endocrinology","A patient with myeloma has corrected calcium of 3.5 mmol/L, vomiting and confusion. The first step is:","IV 0.9% saline rehydration","Oral calcium restriction only","Thiazide diuretic","IV calcium gluconate","Severe hypercalcaemia causes volume depletion. Rehydrate first, then give a bisphosphonate (zoledronic acid)."],
+["Endocrinology","Before surgery for phaeochromocytoma, the first drug started is:","An α-blocker (phenoxybenzamine)","A β-blocker alone","An ACE inhibitor","A thiazide diuretic","Alpha-blockade first controls BP, since a β-blocker alone risks unopposed α stimulation and hypertensive crisis."],
+["Neurology","A 25-year-old has fever, headache and neck stiffness. The best initial empirical antibiotic is:","IV ceftriaxone","Oral amoxicillin","IV gentamicin","IV metronidazole","Give IV ceftriaxone promptly (with dexamethasone in adults) and do not delay antibiotics for a lumbar puncture."],
+["Neurology","A convulsion lasts more than 5 minutes in an adult. The first-line drug is:","IV lorazepam or diazepam","IV phenytoin","Oral carbamazepine","IV paracetamol","Benzodiazepines are first-line for status epilepticus, followed by IV phenytoin, valproate or levetiracetam if seizures continue."],
+["Neurology","The first investigation in acute stroke is:","Non-contrast CT head","MRI spine","EEG","Lumbar puncture","CT distinguishes haemorrhage from ischaemia and guides thrombolysis (within 4.5 hours) and antiplatelet therapy."],
+["Neurology","A 70-year-old has resting tremor, bradykinesia and rigidity that affect daily life. The first-line drug is:","Levodopa with carbidopa","Haloperidol","Propranolol","Sodium valproate","Levodopa/carbidopa is the most effective symptomatic treatment for Parkinson disease."],
+["Neurology","Two weeks after gastroenteritis, a patient has ascending weakness and absent reflexes. CSF would show:","Raised protein with a normal cell count","Raised neutrophils with low glucose","Raised lymphocytes with a high ADA","Xanthochromia","Guillain-Barré syndrome shows albuminocytological dissociation and is treated with IVIG or plasma exchange."],
+["Neurology","A patient wakes with a drooping face including the forehead and cannot close the eye. There are no other findings. Treatment is:","Oral prednisolone within 72 hours and eye protection","IV acyclovir only","Surgical decompression","Antibiotics","Bell palsy is a lower motor neuron facial palsy. Early steroids improve recovery, and the eye needs lubrication and taping."],
+["Neurology","An AIDS patient with CD4 of 50 has headache, seizures and several ring-enhancing lesions on CT. Empirical treatment is for:","Toxoplasmosis","Pyogenic abscess","Primary CNS lymphoma only","Neurocysticercosis","Treat toxoplasmosis (pyrimethamine and sulfadiazine, or high-dose cotrimoxazole where unavailable) and reassess response in 2 weeks."],
+["Haematology","A farmer in rural Ghana has microcytic hypochromic anaemia and low ferritin. A common contributor is:","Hookworm infestation","Vitamin B12 deficiency","Thalassaemia only","Chronic kidney disease","Hookworm causes chronic intestinal blood loss. Treat with albendazole and iron."],
+["Haematology","A child with sickle cell disease has a severe vaso-occlusive crisis. Initial treatment includes:","Prompt analgesia (including opioids if needed) and hydration","Routine antibiotics only","Exchange transfusion for every crisis","Avoiding analgesia to prevent addiction","Pain is treated promptly with escalating analgesia, oxygen if hypoxic and oral fluids. Look for infection and acute chest syndrome."],
+["Haematology","When both B12 and folate deficiency are suspected, B12 should be given first because folic acid alone may:","Precipitate subacute combined degeneration of the cord","Cause haemolysis","Cause hyperkalaemia","Cause thrombocytosis","Folate corrects the anaemia but not the neuropathy, which may worsen in B12 deficiency."],
+["Haematology","A patient with meningococcal sepsis has purpura and bleeding. Which lab pattern fits DIC?","Prolonged PT and APTT, low fibrinogen, raised D-dimer","Normal PT with low platelets only","Raised fibrinogen","Normal D-dimer","Consumption of clotting factors and platelets with fibrinolysis leads to prolonged clotting times and a high D-dimer. Treat the cause and replace products if bleeding."],
+["Haematology","A patient with splenomegaly, leucocytosis with all stages of granulocytes and BCR-ABL positivity should receive:","Imatinib","Cytarabine alone","Rituximab","Hydroxyurea only","CML is driven by the BCR-ABL tyrosine kinase, which is inhibited by imatinib."],
+["Haematology","A child with Burkitt lymphoma starts chemotherapy and develops hyperkalaemia, hyperuricaemia, hyperphosphataemia and hypocalcaemia. The diagnosis is:","Tumour lysis syndrome","Sepsis","Hypoparathyroidism","DIC","Rapid cell death releases intracellular contents. Prevent with hydration and rasburicase or allopurinol."],
+["Infectious disease","First-line treatment for uncomplicated P. falciparum malaria in an adult in Ghana is:","An artemisinin-based combination (e.g. artemether-lumefantrine)","Oral chloroquine","Oral quinine monotherapy","Sulfadoxine-pyrimethamine","National guidelines recommend ACTs: artemether-lumefantrine, artesunate-amodiaquine or dihydroartemisinin-piperaquine."],
+["Infectious disease","Which bedside test is essential in every child with severe malaria at presentation?","Blood glucose","Chest X-ray","Urinalysis","Sputum smear","Hypoglycaemia is common in severe malaria and may cause convulsions and coma. Check glucose and treat if low."],
+["Infectious disease","Cotrimoxazole prophylaxis in HIV helps prevent:","PCP and toxoplasmosis","CMV retinitis","Cryptococcal meningitis","Kaposi sarcoma","Cotrimoxazole reduces opportunistic infections, including PCP and cerebral toxoplasmosis, with some antimalarial and antibacterial benefit."],
+["Infectious disease","Induction therapy for cryptococcal meningitis is:","Amphotericin B plus flucytosine (or fluconazole)","Ceftriaxone","Cotrimoxazole","Itraconazole alone","Amphotericin-based induction is followed by consolidation and maintenance fluconazole. Manage raised intracranial pressure with therapeutic lumbar punctures."],
+["Infectious disease","A patient with HIV, TB and CD4 of 40 should start ART:","Within 2 weeks of starting TB treatment","After completing TB treatment","At 6 months","Only if the viral load is high","With profound immunosuppression, early ART reduces mortality. For higher CD4 counts, start within 8 weeks."],
+["Infectious disease","After a bite from an unvaccinated stray dog, the first action is:","Wash the wound thoroughly with soap and water for 15 minutes","Suture the wound immediately","Apply a tourniquet","Wait for symptoms","Prompt wound cleaning reduces rabies risk. Then give rabies vaccine plus immunoglobulin in category III exposures."],
+["Infectious disease","A farmer with trismus and spasms after a puncture wound has tetanus. Which antibiotic is preferred?","Metronidazole","Gentamicin","Ciprofloxacin","Cotrimoxazole","Metronidazole is preferred. Combine with human tetanus immunoglobulin, wound debridement, benzodiazepines for spasms and airway support."],
+["Infectious disease","In the first hour of septic shock management you should:","Take cultures, give broad-spectrum IV antibiotics and IV crystalloid","Wait for culture results","Give oral antibiotics","Give vasopressors before any fluids in all cases","Early antibiotics and fluids (about 30 mL/kg) improve survival. Add vasopressors if hypotension persists."],
+["Infectious disease","After a needlestick injury from an HIV-positive patient, PEP should ideally start within:","72 hours (as early as possible)","7 days","2 weeks","1 month","PEP is most effective when started within hours and no later than 72 hours, using a 28-day course of a TLD-based regimen."],
+["Obstetrics","A woman at 34 weeks has BP 170/115 and proteinuria. After magnesium sulphate, which oral antihypertensive is appropriate?","Nifedipine","Enalapril","Atenolol","Furosemide","Nifedipine or labetalol is first-line in pregnancy. ACE inhibitors are contraindicated (fetal renal toxicity)."],
+["Obstetrics","A woman at 34 weeks has painless bright red vaginal bleeding. The most likely cause is:","Placenta praevia","Placental abruption","Vasa praevia","Cervical ectropion","Painless fresh bleeding suggests praevia. Avoid digital vaginal examination until praevia is excluded by ultrasound."],
+["Obstetrics","After prolonged obstructed labour, a woman leaks urine continuously. The cause is:","Vesicovaginal fistula","Stress incontinence","Urge incontinence","Overflow incontinence","Prolonged pressure of the fetal head causes ischaemic necrosis of the bladder and vaginal wall."],
+["Obstetrics","Routine screening for gestational diabetes with an OGTT is done at:","24-28 weeks","6-8 weeks","34-36 weeks","After delivery only","Screening at 24-28 weeks (earlier in high-risk women) detects GDM."],
+["Obstetrics","An Rh-negative mother delivers an Rh-positive baby. Anti-D immunoglobulin should be given within:","72 hours","7 days","2 weeks","6 weeks","Anti-D prevents sensitisation after delivery or other sensitising events in Rh-negative women."],
+["Obstetrics","The recommended uterotonic for active management of the third stage of labour is:","Oxytocin 10 IU IM","Ergometrine in all women","Carboprost","Mifepristone","Oxytocin is the first choice. It reduces PPH risk when combined with controlled cord traction and uterine massage."],
+["Obstetrics","The earliest clinical sign of magnesium sulphate toxicity is:","Loss of patellar reflexes","Respiratory arrest","Cardiac arrest","Hypertension","Monitor reflexes, respiratory rate and urine output. Calcium gluconate is the antidote."],
+["Obstetrics","Antenatal corticosteroids in threatened preterm labour mainly reduce:","Neonatal respiratory distress syndrome","Maternal infection","Postpartum haemorrhage","Neonatal jaundice","Betamethasone or dexamethasone accelerates fetal lung maturity and reduces RDS, intraventricular haemorrhage and death."],
+["Obstetrics","A pregnant woman has a positive syphilis serology. Treatment is:","Benzathine penicillin","Doxycycline","Erythromycin","Ciprofloxacin","Penicillin is the only reliably effective treatment that prevents congenital syphilis."],
+["Gynaecology","Outpatient treatment for pelvic inflammatory disease is:","Ceftriaxone IM, doxycycline and metronidazole","Amoxicillin alone","Single-dose fluconazole","Ciprofloxacin alone","Regimens must cover gonorrhoea, chlamydia and anaerobes."],
+["Gynaecology","The most common benign uterine tumour, with higher incidence among Black women, is:","Leiomyoma (fibroid)","Endometrial polyp","Adenomyoma","Leiomyosarcoma","Fibroids present with heavy menstrual bleeding, pressure symptoms and infertility."],
+["Gynaecology","A feasible cervical precancer screening method in low-resource Ghanaian settings is:","Visual inspection with acetic acid (VIA)","Colposcopy for every woman","Cone biopsy","Pelvic ultrasound","VIA and HPV DNA testing are acceptable low-resource screening methods, with same-visit treatment of positives."],
+["Gynaecology","Postmenopausal bleeding should be investigated to exclude:","Endometrial cancer","Fibroids only","Ovarian cyst only","Cervical ectropion","Transvaginal ultrasound and endometrial sampling are the initial tests."],
+["Gynaecology","A 16-year-old has primary amenorrhoea, short stature and a webbed neck. The karyotype is:","45,X","47,XXY","46,XY","47,XXX","Turner syndrome causes streak ovaries and primary amenorrhoea."],
+["Paediatrics","First-line empirical antibiotics for neonatal sepsis are:","Ampicillin plus gentamicin","Ciprofloxacin","Oral amoxicillin","Metronidazole alone","Ampicillin and gentamicin cover group B streptococci, E. coli and Listeria."],
+["Paediatrics","A newborn becomes jaundiced within 24 hours of birth. This should be considered:","Pathological until proven otherwise","Physiological","Breast-milk jaundice","Normal in preterm babies","Early jaundice suggests haemolysis (ABO or Rh incompatibility, G6PD deficiency) or sepsis."],
+["Paediatrics","Which supplement is recommended for all children with measles?","Vitamin A","Vitamin D","Vitamin K","Iron","Vitamin A reduces measles complications and mortality."],
+["Paediatrics","A 2-year-old with a brief generalised seizure and temperature of 39.5°C recovers fully within minutes. Management is:","Treat the fever source and reassure, with no long-term anticonvulsant","Start phenobarbital","MRI brain","Start valproate","A simple febrile seizure carries a small risk of later epilepsy and does not need prophylaxis."],
+["Paediatrics","The initial feed in the stabilisation phase of severe acute malnutrition is:","F-75","F-100","Full-strength family food","Ready-to-use therapeutic food only","F-75 provides low protein and sodium, suited to metabolically unstable children."],
+["Paediatrics","A 3-year-old has cough and fast breathing but no danger signs. Treatment is:","Oral amoxicillin for 5 days","IV ceftriaxone","Observation only","Cough syrup","IMCI treats fast-breathing pneumonia at home with oral amoxicillin."],
+["Paediatrics","An infant who sits without support, babbles and transfers objects hand to hand is likely aged:","6 months","3 months","12 months","18 months","Sitting without support develops at about 6 months."],
+["Paediatrics","A child has fever for 6 days, conjunctivitis, red cracked lips, rash and cervical lymphadenopathy. Treatment is:","IVIG and aspirin","Penicillin","Prednisolone alone","Ceftriaxone only","Kawasaki disease is treated early to reduce the risk of coronary aneurysm."],
+["Paediatrics","Which vaccine is given at 9 months in Ghana's EPI together with measles-rubella?","Yellow fever","BCG","Rotavirus","Pentavalent dose 1","Yellow fever vaccine is given at 9 months. BCG is given at birth, and pentavalent and rotavirus start at 6 weeks."],
+["Surgery","A young man has pain migrating from the periumbilical region to the right iliac fossa, with anorexia and fever. Management is:","Appendicectomy after resuscitation and antibiotics","Discharge on analgesia","Colonoscopy","Right hemicolectomy","Clinical appendicitis is treated surgically."],
+["Surgery","An elderly man has massive abdominal distension and a coffee bean sign on X-ray. The diagnosis is:","Sigmoid volvulus","Caecal volvulus","Small bowel obstruction","Toxic megacolon","Management is rigid or flexible sigmoidoscopic decompression, then elective sigmoid colectomy. Laparotomy if ischaemia is suspected."],
+["Surgery","A patient has sudden severe epigastric pain with a board-like abdomen. The first imaging is:","Erect chest X-ray","Barium meal","MRCP","Pelvic ultrasound","Free subdiaphragmatic gas indicates a perforated viscus."],
+["Surgery","A patient opens eyes to pain, makes incomprehensible sounds and withdraws from pain. The Glasgow Coma Scale score is:","8","6","10","12","E2 + V2 + M4 = 8. A GCS of 8 or less needs airway protection."],
+["Surgery","Triple assessment of a breast lump comprises:","Clinical examination, imaging and core biopsy","Examination, MRI and blood tests","Ultrasound, CT and PET","Mammogram, CA 15-3 and biopsy","Combining clinical, radiological and pathological findings gives the highest diagnostic accuracy."],
+["Surgery","Using the rule of nines in an adult, the front of the trunk accounts for:","18%","9%","27%","36%","The anterior trunk is 18% and the posterior trunk is 18%. Each arm is 9% and each leg 18%."],
+["Surgery","After a forearm fracture, a patient has severe pain that increases with passive finger extension. The likely complication is:","Compartment syndrome","Fat embolism","Deep vein thrombosis","Malunion","Pain on passive stretch is the earliest reliable sign. Treatment is urgent fasciotomy."],
+["Surgery","A patient has a painful red eye, halos, a fixed mid-dilated pupil and a rock-hard globe. Initial treatment is:","Acetazolamide with topical pressure-lowering drops","Mydriatic drops","Topical steroids alone","Reassurance","Acute angle-closure glaucoma is an emergency. Avoid dilating drops, and arrange laser peripheral iridotomy."],
+["Surgery","A patient develops fever to 41°C, muscle rigidity and hypercapnia after halothane and suxamethonium. Treatment is:","Dantrolene","Paracetamol","Propranolol","Haloperidol","Malignant hyperthermia is treated with dantrolene, cooling and stopping triggers."],
+["Psychiatry","A patient on haloperidol has sudden neck spasm and upward eye deviation. Treatment is:","IM procyclidine or benztropine","IV haloperidol","Lithium","IM adrenaline","Acute dystonia responds quickly to anticholinergic drugs."],
+["Psychiatry","Fever, lead-pipe rigidity, altered mental state and raised CK after starting an antipsychotic suggest:","Neuroleptic malignant syndrome","Serotonin syndrome","Malignant hyperthermia","Meningitis","Stop the antipsychotic and give supportive care (cooling, fluids). Consider dantrolene or bromocriptine."],
+["Psychiatry","A woman 10 days postpartum has delusions, hallucinations and agitation. The diagnosis is:","Puerperal psychosis","Baby blues","Postnatal depression","Panic disorder","Puerperal psychosis is a psychiatric emergency with risk of harm to the mother and baby, and needs admission."],
+["Public health","When treatment of a chronic disease prolongs survival without cure, prevalence:","Increases","Decreases","Stays unchanged","Equals incidence","Prevalence is approximately incidence multiplied by mean duration of disease."],
+["Public health","If the prevalence of a disease in the tested population falls, the positive predictive value of a test:","Decreases","Increases","Is unchanged","Equals the sensitivity","PPV depends on prevalence, whereas sensitivity and specificity do not."],
+["Public health","Screening women for cervical precancer is an example of:","Secondary prevention","Primary prevention","Tertiary prevention","Primordial prevention","Early detection of asymptomatic disease is secondary prevention. HPV vaccination is primary prevention."],
+["Ethics","An unconscious child needs emergency life-saving surgery and no parent can be reached. You should:","Proceed under the emergency (necessity) principle and document","Wait for a parent","Obtain a court order first","Refuse to operate","Treatment necessary to save life or prevent serious harm may proceed without consent when delay is dangerous. Document and inform guardians when possible."],
+["Ethics","The Bolam test is used to judge whether a doctor:","Acted in accordance with a responsible body of medical opinion","Obtained written consent","Followed hospital policy","Held a valid licence","In negligence cases, the standard of care is judged by what a responsible body of professional opinion would accept."]
+];
+
+/* ---------- build the exam (deterministic) ---------- */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function shuffle(a,r){for(var i=a.length-1;i>0;i--){var j=Math.floor(r()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function make(arr,grp,seed){
+  return arr.map(function(x,n){
+    var r=rng(seed+n*7919);
+    var opts=[{t:x[2],c:true},{t:x[3]},{t:x[4]},{t:x[5]}];
+    shuffle(opts,r);
+    var a=0; for(var k=0;k<4;k++){ if(opts[k].c) a=k; }
+    return {g:grp,s:x[0],q:x[1],o:opts.map(function(p){return p.t;}),a:a,e:x[6]};
+  });
+}
+var P = shuffle(make(PRE,"Preclinical",1000),rng(11));
+var C = shuffle(make(CLI,"Clinical",5000),rng(23));
+var Q = [];
+for(var b=0;b<4;b++){
+  var blk = P.slice(b*25,b*25+25).concat(C.slice(b*25,b*25+25));
+  shuffle(blk,rng(100+b));
+  Q = Q.concat(blk);
+}
+
+var N = Q.length, SET = 50, KEY = "mdc-mock200-v1";
+var state = {i:0, ans:[], elapsed:0, done:false, mode:null, review:false};
+for(var z=0; z<N; z++) state.ans.push(null);
+var view = "q";
+var pendingGuess = false, confirmReset = false;
+
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    if(!raw) return;
+    var s = JSON.parse(raw);
+    if(s && s.ans && s.ans.length===N){ state = s; }
+  }catch(e){}
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+var L = ["A","B","C","D"];
+var stage = document.getElementById("stage");
+var bar = document.getElementById("bar");
+var grid = document.getElementById("grid");
+var clock = document.getElementById("clock");
+var progfill = document.getElementById("progfill");
+var mapwrap = document.getElementById("mapwrap");
+
+function fmt(t){ var h=Math.floor(t/3600), m=Math.floor((t%3600)/60), s=t%60; return (h?h+":"+(m<10?"0":""):"")+m+":"+(s<10?"0":"")+s; }
+function esc(t){ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function answered(){ var n=0; for(var j=0;j<N;j++) if(state.ans[j]) n++; return n; }
+function showFeedback(j){ return state.mode==="learn" || state.review || state.done; }
+
+setInterval(function(){
+  if(state.done || !state.mode) return;
+  state.elapsed++;
+  clock.textContent = fmt(state.elapsed);
+  if(state.elapsed % 15 === 0) save();
+},1000);
+
+function buildGrid(){
+  var h="";
+  for(var j=0;j<N;j++){
+    if(j>0 && j%SET===0) h += '<span class="gap"></span>';
+    h += '<button class="tick" data-go="'+j+'" aria-label="Question '+(j+1)+'" title="Question '+(j+1)+'"></button>';
+  }
+  grid.innerHTML = h;
+}
+function paint(){
+  var mb = document.getElementById("modebar");
+  mb.innerHTML = (state.mode==="exam" && view==="q" && !state.review && !state.done) ? '<button class="modebtn" data-act="tolearn">Switch to learn mode</button>' : '';
+  var ts = grid.querySelectorAll(".tick");
+  for(var j=0;j<ts.length;j++){
+    var a=state.ans[j], c="tick";
+    if(a){
+      if(showFeedback(j)){ c += (a.sel===Q[j].a ? " ok" : " bad"); }
+      else c += " sel";
+      if(a.guess) c += " guess";
+    }
+    if(view==="q" && state.mode && j===state.i) c += " cur";
+    ts[j].className = c;
+  }
+  progfill.style.width = (answered()/N*100)+"%";
+}
+
+/* ---------- intro ---------- */
+function renderIntro(){
+  bar.innerHTML = "";
+  stage.innerHTML =
+   '<div class="intro"><h2>Full MDC mock: 200 MCQs</h2>'+
+   '<p>Four sets of 50. Each set has 25 preclinical and 25 clinical questions, shuffled together. Preclinical questions are written as clinical scenarios, the way the exam rewards you for knowing the science.</p>'+
+   '<p>Your progress saves in this browser. You can close the page and resume where you stopped.</p>'+
+   '<div class="modes">'+
+   '<button class="mode" data-mode="learn"><b>Learn mode</b><span>Explanation after every answer. Best for building knowledge from your misses.</span></button>'+
+   '<button class="mode" data-mode="exam"><b>Exam mode</b><span>No feedback until the end. You can change answers and jump between questions. Pace yourself at about one minute per question.</span></button>'+
+   '</div><p class="note">Tick "I am guessing" on any question you are unsure about. Guesses that land are not secure knowledge, and the results page shows them separately.</p></div>';
+  paint();
+}
+
+/* ---------- question ---------- */
+function renderQuestion(){
+  view = "q";
+  var q = Q[state.i], a = state.ans[state.i];
+  var fb = showFeedback(state.i);
+  var setNo = Math.floor(state.i/SET)+1;
+  var h = '<div class="meta"><span>Question '+(state.i+1)+' of '+N+'</span><span class="chip">Set '+setNo+'</span><span class="chip sec">'+q.g+'</span>'+(fb||state.mode==="learn"?'<span class="chip">'+esc(q.s)+'</span>':'')+'</div>';
+  h += '<h2 class="stem">'+esc(q.q)+'</h2><div class="opts" role="group" aria-label="Answer options">';
+  var lock = (state.mode==="learn" && a) || state.review || state.done;
+  for(var k=0;k<4;k++){
+    var cls = "opt", tag = "";
+    if(a){
+      if(fb){
+        if(k===q.a){ cls += " ok"; tag = a.sel===k ? "Your answer, correct" : "Correct answer"; }
+        else if(k===a.sel){ cls += " bad"; tag = "Your answer"; }
+        else cls += " dim";
+      } else if(k===a.sel){ cls += " sel"; tag = "Selected"; }
+    }
+    h += '<button class="'+cls+'" data-pick="'+k+'"'+(lock?' disabled':'')+'><span class="ltr">'+L[k]+'</span><span class="txt">'+esc(q.o[k])+'</span>'+(tag?'<span class="tag">'+tag+'</span>':'')+'</button>';
+  }
+  h += '</div>';
+  if(!a || (state.mode==="exam" && !state.review && !state.done)){
+    var checked = a ? a.guess : pendingGuess;
+    h += '<div class="guessrow"><input type="checkbox" id="g"'+(checked?' checked':'')+'><label for="g">I am guessing on this one</label></div>';
+  } else if(a.guess){
+    h += '<div class="gtag">Marked as a guess</div>';
+  }
+  if(a && fb){
+    var right = a.sel===q.a;
+    h += '<section class="why '+(right?'ok':'bad')+'" id="why"><h3>'+(right?'Correct.':'Not quite. The answer is '+L[q.a]+'.')+'</h3><p>'+esc(q.e)+'</p></section>';
+  }
+  stage.innerHTML = h;
+  var last = state.i===N-1;
+  var canNext = state.mode==="exam" && !state.review && !state.done ? true : !!a;
+  var label = last ? (state.mode==="exam" && !state.review ? "Finish exam" : "See results") : "Next question";
+  bar.innerHTML = '<div class="in"><button class="btn ghost" data-act="prev"'+(state.i===0?' disabled':'')+'>Back</button><button class="btn primary" data-act="next"'+(canNext?'':' disabled')+'>'+label+'</button></div>';
+  paint();
+}
+
+function pick(k){
+  if(!state.mode || view!=="q") return;
+  var a = state.ans[state.i];
+  if(state.review || state.done) return;
+  if(state.mode==="learn" && a) return;
+  var g = document.getElementById("g");
+  state.ans[state.i] = {sel:k, guess: g ? g.checked : false};
+  pendingGuess = false;
+  save();
+  renderQuestion();
+  if(state.mode==="learn"){
+    var w = document.getElementById("why");
+    if(w){ try{ w.scrollIntoView({block:"nearest",behavior:"smooth"}); }catch(e){} }
+  }
+}
+function toggleGuess(v){
+  var a = state.ans[state.i];
+  if(a && state.mode==="exam" && !state.review && !state.done){ a.guess = v; save(); paint(); }
+  else if(!a){ pendingGuess = v; }
+}
+function next(){
+  if(view==="break"){ renderQuestion(); window.scrollTo(0,0); return; }
+  var a = state.ans[state.i];
+  if(state.mode==="learn" && !state.review && !a) return;
+  pendingGuess = false;
+  if(state.i===N-1){ state.done = true; state.review=false; save(); renderResults(); return; }
+  if((state.i+1)%SET===0 && !state.review){
+    state.i++; save(); renderBreak(Math.floor((state.i)/SET)); return;
+  }
+  state.i++; save(); renderQuestion(); window.scrollTo(0,0);
+}
+function prev(){
+  if(view==="break"){ state.i--; renderQuestion(); window.scrollTo(0,0); return; }
+  if(state.i>0){ state.i--; pendingGuess=false; renderQuestion(); window.scrollTo(0,0); }
+}
+function firstOpen(){ for(var j=0;j<N;j++){ if(!state.ans[j]) return j; } return N-1; }
+function go(j){
+  if(!state.mode) return;
+  var free = state.mode==="exam" || state.review || state.done;
+  if(!free && j>firstOpen()) return;
+  if(state.done){ state.done=false; state.review=true; }
+  state.i = j; pendingGuess=false; renderQuestion(); window.scrollTo(0,0);
+}
+
+/* ---------- set break ---------- */
+function renderBreak(setDone){
+  view = "break";
+  var from=(setDone-1)*SET, to=setDone*SET, ok=0, n=0;
+  for(var j=from;j<to;j++){ var a=state.ans[j]; if(a){ n++; if(a.sel===Q[j].a) ok++; } }
+  var h = '<div class="intro"><h2>Set '+setDone+' complete</h2>';
+  if(state.mode==="learn") h += '<p>You scored <b>'+ok+' of '+SET+'</b> in this set.</p>';
+  else h += '<p>You answered <b>'+n+' of '+SET+'</b> questions in this set. Scores appear at the end in exam mode.</p>';
+  h += '<p class="note">Stand up, drink water, rest your eyes for five minutes. Your progress is saved.</p></div>';
+  stage.innerHTML = h;
+  bar.innerHTML = '<div class="in"><button class="btn ghost" data-act="prev">Back</button><button class="btn primary" data-act="next">Start set '+(setDone+1)+'</button></div>';
+  paint(); window.scrollTo(0,0);
+}
+
+/* ---------- results ---------- */
+function stats(){
+  var r={ok:0,pre:0,cli:0,preN:0,cliN:0,guessed:0,guessedOk:0,unans:0,missed:[],bySys:{},order:[],sets:[0,0,0,0]};
+  for(var j=0;j<N;j++){
+    var q=Q[j], a=state.ans[j];
+    if(!r.bySys[q.s]){ r.bySys[q.s]={r:0,t:0}; r.order.push(q.s); }
+    r.bySys[q.s].t++;
+    if(q.g==="Preclinical") r.preN++; else r.cliN++;
+    var right = a && a.sel===q.a;
+    if(!a) r.unans++;
+    if(right){ r.ok++; r.bySys[q.s].r++; r.sets[Math.floor(j/SET)]++; if(q.g==="Preclinical") r.pre++; else r.cli++; }
+    else r.missed.push(j);
+    if(a && a.guess){ r.guessed++; if(right) r.guessedOk++; }
+  }
+  return r;
+}
+function summaryText(st){
+  var t = "MDC mock 200 ("+(state.mode==="exam"?"exam":"learn")+" mode)\n";
+  t += "Score: "+st.ok+"/"+N+" ("+Math.round(st.ok/N*100)+"%)\n";
+  t += "Preclinical: "+st.pre+"/"+st.preN+" | Clinical: "+st.cli+"/"+st.cliN+"\n";
+  t += "Sets: "+st.sets.map(function(x,i){return (i+1)+": "+x+"/50";}).join(" | ")+"\n";
+  t += "Guessed: "+st.guessed+" (guessed and right: "+st.guessedOk+")"+(st.unans?" | Unanswered: "+st.unans:"")+"\n";
+  t += "Time: "+fmt(state.elapsed)+"\n";
+  var weak = st.order.filter(function(s){return st.bySys[s].r<st.bySys[s].t;}).sort(function(x,y){
+    return (st.bySys[x].r/st.bySys[x].t)-(st.bySys[y].r/st.bySys[y].t);
+  }).map(function(s){return s+" "+st.bySys[s].r+"/"+st.bySys[s].t;});
+  t += "Topics (correct/total), weakest first: "+(weak.length?weak.join(", "):"none missed");
+  return t;
+}
+function renderResults(){
+  view = "results";
+  var st = stats();
+  var pct = Math.round(st.ok/N*100);
+  var h = '<h2 class="sec" style="margin-top:4px">Result</h2>';
+  h += '<div class="score">'+st.ok+'<small> / '+N+'</small></div><div class="note">'+pct+'% in '+fmt(state.elapsed)+(st.unans?' ('+st.unans+' unanswered)':'')+'</div>';
+  h += '<div class="split"><div><b>'+st.pre+' / '+st.preN+'</b><span>Preclinical</span></div><div><b>'+st.cli+' / '+st.cliN+'</b><span>Clinical</span></div><div><b>'+st.guessedOk+' / '+st.guessed+'</b><span>Guesses that landed</span></div></div>';
+  h += '<div class="split">'+st.sets.map(function(x,i){return '<div><b>'+x+' / 50</b><span>Set '+(i+1)+'</span></div>';}).join("")+'</div>';
+  h += '<h2 class="sec">By topic, weakest first</h2>';
+  var list = st.order.slice().sort(function(x,y){
+    var px=st.bySys[x].r/st.bySys[x].t, py=st.bySys[y].r/st.bySys[y].t;
+    return px-py || st.bySys[y].t-st.bySys[x].t;
+  });
+  list.forEach(function(s){
+    var d=st.bySys[s], p=d.r/d.t, c = p<0.5?"low":(p<0.8?"mid":"");
+    h += '<div class="sys"><span>'+esc(s)+'</span><div class="track"><div class="fill '+c+'" style="width:'+Math.max(4,Math.round(p*100))+'%"></div></div><span class="n">'+d.r+'/'+d.t+'</span></div>';
+  });
+  h += '<h2 class="sec">Questions to revisit ('+st.missed.length+')</h2>';
+  if(!st.missed.length) h += '<p class="note">No misses. Check the guesses that landed: those are not secure yet.</p>';
+  st.missed.forEach(function(j){
+    var q=Q[j], a=state.ans[j];
+    h += '<details class="miss"><summary>Q'+(j+1)+', '+esc(q.s)+': '+esc(q.q)+'</summary><div class="body"><p><b>Your answer:</b> '+(a?L[a.sel]+'. '+esc(q.o[a.sel]):'Not answered')+'</p><p><b>Correct:</b> '+L[q.a]+'. '+esc(q.o[q.a])+'</p><p>'+esc(q.e)+'</p></div></details>';
+  });
+  h += '<h2 class="sec">Send this back to plan your repair days</h2><p class="note">Copy this summary and paste it in the chat. I will target your weakest topics next.</p>';
+  h += '<textarea class="sum" id="sum" readonly></textarea><div class="row"><button class="btn primary" style="flex:none" data-act="copy">Copy summary</button><span class="note" id="copied" style="align-self:center"></span></div>';
+  h += '<div class="foot"><button data-act="review">Review all questions with explanations</button><button data-act="reset" id="rs">Start over</button></div>';
+  stage.innerHTML = h;
+  document.getElementById("sum").value = summaryText(st);
+  bar.innerHTML = "";
+  paint(); window.scrollTo(0,0);
+}
+function copySummary(){
+  var ta = document.getElementById("sum"), msg = document.getElementById("copied");
+  ta.focus(); ta.select();
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value).then(function(){ msg.textContent="Copied."; }, function(){ msg.textContent="Select the text above and copy it."; });
+      return;
+    }
+  }catch(e){}
+  var ok=false; try{ ok = document.execCommand("copy"); }catch(e){}
+  msg.textContent = ok ? "Copied." : "Select the text above and copy it.";
+}
+function reset(){
+  var b = document.getElementById("rs");
+  if(!confirmReset){ confirmReset=true; b.textContent="Press again to erase all answers"; return; }
+  confirmReset=false;
+  state = {i:0, ans:[], elapsed:0, done:false, mode:null, review:false};
+  for(var z=0; z<N; z++) state.ans.push(null);
+  save(); clock.textContent="0:00"; view="q"; renderIntro(); window.scrollTo(0,0);
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click",function(e){
+  var t = e.target.closest("[data-pick],[data-act],[data-go],[data-mode]");
+  if(!t) return;
+  if(t.hasAttribute("data-mode")){ state.mode = t.getAttribute("data-mode"); state.i=0; save(); renderQuestion(); window.scrollTo(0,0); return; }
+  if(t.hasAttribute("data-pick")) pick(parseInt(t.getAttribute("data-pick"),10));
+  else if(t.hasAttribute("data-go")) go(parseInt(t.getAttribute("data-go"),10));
+  else {
+    var act = t.getAttribute("data-act");
+    if(act==="next") next();
+    else if(act==="prev") prev();
+    else if(act==="tolearn"){ state.mode="learn"; save(); renderQuestion(); window.scrollTo(0,0); }
+    else if(act==="copy") copySummary();
+    else if(act==="reset") reset();
+    else if(act==="review"){ state.done=false; state.review=true; state.i=0; save(); renderQuestion(); window.scrollTo(0,0); }
+  }
+});
+document.addEventListener("change",function(e){
+  if(e.target && e.target.id==="g") toggleGuess(e.target.checked);
+});
+document.addEventListener("keydown",function(e){
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+  var tag = (e.target.tagName||"").toLowerCase();
+  if(tag==="textarea"||tag==="input") return;
+  if(!state.mode || view!=="q") return;
+  var key = e.key.toLowerCase(), idx = -1;
+  if(key.length===1 && "abcd".indexOf(key)>-1) idx = "abcd".indexOf(key);
+  else if(key.length===1 && "1234".indexOf(key)>-1) idx = "1234".indexOf(key);
+  if(idx>-1){ pick(idx); return; }
+  if((key==="enter"||key==="arrowright") && tag!=="button"){
+    var ok = (state.mode==="exam" && !state.review) || state.ans[state.i] || state.review;
+    if(ok){ e.preventDefault(); next(); }
+  } else if(key==="arrowleft"){ prev(); }
+});
+
+/* ---------- start ---------- */
+load();
+buildGrid();
+clock.textContent = fmt(state.elapsed);
+if(!state.mode) renderIntro();
+else if(state.done) renderResults();
+else renderQuestion();
+</script>
+</body>
+</html>

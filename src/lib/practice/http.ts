@@ -1,4 +1,4 @@
-import { logger } from "@/lib/logger";
+import { logger, safeError } from "@/lib/logger";
 import { NotEnoughQuestionsError } from "@/lib/practice/compose";
 
 /** An expected failure with a client-safe message and HTTP status. */
@@ -18,7 +18,7 @@ export async function handle(fn: () => Promise<Response>): Promise<Response> {
   } catch (err) {
     if (err instanceof ServiceError) return Response.json({ error: err.message }, { status: err.status });
     if (err instanceof NotEnoughQuestionsError) return Response.json({ error: err.message }, { status: 422 });
-    logger.error({ err: err instanceof Error ? err.message : String(err) }, "unhandled route error");
+    logger.error({ err: safeError(err) }, "unhandled route error");
     return Response.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

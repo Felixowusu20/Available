@@ -21,10 +21,19 @@ class SmtpAdapter implements EmailAdapter {
   }
 }
 
-/** Development fallback: prints the message (including links) to the server log. */
+/**
+ * Used when SMTP is not configured. The body holds a verification or password-reset link, which is
+ * as good as a password for that account, so it is only written to the log outside production
+ * (or when EMAIL_LOG_LINKS=true is set deliberately, e.g. for a local demo of a production build).
+ */
 class ConsoleAdapter implements EmailAdapter {
   async send(m: EmailMessage) {
-    logger.warn({ to: m.to, subject: m.subject, body: m.text }, "SMTP not configured; email not sent (dev log only)");
+    const showBody = process.env.NODE_ENV !== "production" || process.env.EMAIL_LOG_LINKS === "true";
+    if (showBody) {
+      logger.warn({ to: m.to, subject: m.subject, body: m.text }, "SMTP not configured; email not sent (link logged for development)");
+    } else {
+      logger.error({ subject: m.subject }, "SMTP is not configured: an email could not be sent. Set SMTP_HOST and the other SMTP_* variables.");
+    }
   }
 }
 

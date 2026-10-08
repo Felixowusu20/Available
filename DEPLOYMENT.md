@@ -31,7 +31,7 @@ Everything is configured through environment variables; [.env.example](.env.exam
 | `APP_URL` | Public address, e.g. `https://practice.example.com` (no trailing slash). Used in emailed links. |
 | `AUTH_SECRET` | Signs session cookies. Generate: `openssl rand -base64 32`. Keep it secret and stable. |
 | `AUTH_TRUST_HOST` | `true` (the app runs behind a proxy). |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM` | Email. With no `SMTP_HOST`, links are only written to the log (development). |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM` | Email. With no `SMTP_HOST` no email is sent; in development the link is printed in the log, in production it is deliberately **not** logged (a logged reset link is as good as a password). |
 | `ANTHROPIC_API_KEY` | Optional. Without it the app runs and AI features say "unavailable". |
 | `AI_TAGGING_MODEL`, `AI_QUALITY_MODEL`, `AI_QUALITY_EFFORT` | Which models the AI uses. Change without code edits. |
 | `ADMIN_SEED_EMAIL`, `ADMIN_SEED_PASSWORD` | The first admin (section 3). |
@@ -254,7 +254,7 @@ docker compose exec db psql -U mdc -d postgres -c "DROP DATABASE mdc_restore_tes
 | Sign-in works, then you are sent back to the login page | `APP_URL` doesn't match the real address, or the proxy isn't sending `X-Forwarded-Proto: https`. Check `AUTH_TRUST_HOST=true`. |
 | Everyone suddenly signed out | `AUTH_SECRET` changed or is not set the same on every instance. |
 | "Too many attempts" for people who did nothing wrong | The proxy isn't passing the real client IP (all users share one). Fix the `X-Forwarded-For` header (section 6). |
-| Verification / reset emails never arrive | `SMTP_HOST` is empty (links are only in the log), wrong credentials, or the sender domain lacks SPF/DKIM so mail lands in spam. Check `docker compose logs app` for "SMTP not configured" or send errors. |
+| Verification / reset emails never arrive | `SMTP_HOST` is empty (the log then says "SMTP is not configured"), wrong credentials, or the sender domain lacks SPF/DKIM so mail lands in spam. Check `docker compose logs app` for that message or for send errors. |
 | AI buttons say unavailable | `ANTHROPIC_API_KEY` is empty or wrong. A rejected key shows "The Anthropic API key was rejected". |
 | AI runs fail with "Rate limited" | Provider rate limit; wait a minute and retry smaller selections. |
 | Build killed / out of memory | Server too small. Add swap or build elsewhere and push the image. |

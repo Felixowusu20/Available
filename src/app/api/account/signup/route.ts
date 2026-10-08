@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { issueToken } from "@/lib/auth-tokens";
 import { sendVerificationEmail } from "@/lib/email";
-import { logger } from "@/lib/logger";
+import { logger, safeError } from "@/lib/logger";
 import { hashPassword } from "@/lib/password";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { parseJson, signUpSchema } from "@/lib/validation";
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     logger.info({ userId: user.id }, "signup");
   } catch (err) {
     // A concurrent duplicate sign-up lands here; anything else is logged and hidden from the client.
-    logger.error({ err: (err as Error).message }, "signup failed");
+    logger.error({ err: safeError(err) }, "signup failed");
   }
   return generic;
 }

@@ -30,10 +30,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const { email, password } = parsed.data;
 
         const ip = clientIp(request.headers);
-        const [byIp, byEmail] = await Promise.all([
-          rateLimit(`login:ip:${ip}`, 20, 15 * 60),
-          rateLimit(`login:email:${email}`, 8, 15 * 60),
-        ]);
+        const byIp = await rateLimit(`login:ip:${ip}`, 20, 15 * 60);
+        const byEmail = await rateLimit(`login:email:${email}`, 8, 15 * 60);
         if (!byIp.ok || !byEmail.ok) throw new TooManyAttempts();
 
         const user = await db.user.findUnique({ where: { email } });

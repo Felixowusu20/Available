@@ -2,6 +2,7 @@
 
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
+import { logger } from "@/lib/logger";
 
 export type LoginState = { error?: string; unverifiedEmail?: string } | undefined;
 
@@ -15,6 +16,11 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
     });
   } catch (err) {
     if (err instanceof AuthError) {
+      if (err.type !== "CredentialsSignin") {
+        // Infrastructure problem (e.g. database down), not the user's mistake.
+        logger.error({ type: err.type, cause: String((err.cause as { err?: unknown } | undefined)?.err ?? err.cause) }, "login failed unexpectedly");
+        return { error: "We couldn't sign you in right now. Please try again in a moment." };
+      }
       const code = (err as { code?: string }).code;
       if (code === "email_not_verified") {
         return { error: "Please verify your email first. Check your inbox for the link.", unverifiedEmail: email };

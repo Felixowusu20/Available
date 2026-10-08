@@ -4,7 +4,8 @@ import { PrismaClient } from "@/generated/prisma/client";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function create(): PrismaClient {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  const max = Number(process.env.DATABASE_POOL_MAX) || 10;
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max });
   return new PrismaClient({ adapter });
 }
 

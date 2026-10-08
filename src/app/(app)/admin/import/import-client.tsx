@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { describeTotals, runAiInChunks } from "@/lib/ai/run-client";
 
 type Row = { row: number; status: "ok" | "warning" | "error" | "duplicate" | "similar"; messages: string[]; stemPreview: string; tagged: boolean };
 type Preview = { rows: Row[]; totals: { total: number; importable: number; errors: number; duplicates: number; similar: number; untagged: number } };
@@ -66,16 +67,9 @@ export function ImportClient({ aiAvailable }: { aiAvailable: boolean }) {
   async function tagWithAi(ids: string[]) {
     setBusy("ai");
     setAiMsg(null);
-    try {
-      const res = await fetch("/api/admin/ai/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "tag", ids }) });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error ?? "AI run failed");
-      setAiMsg(`AI tagging finished: ${data.succeeded} suggested, ${data.failed} failed.`);
-    } catch (e) {
-      setAiMsg(e instanceof Error ? e.message : "AI run failed");
-    } finally {
-      setBusy(null);
-    }
+    const totals = await runAiInChunks("tag", ids, (p) => setAiMsg(`Tagging… ${p.done} of ${p.total}`));
+    setAiMsg(describeTotals(totals));
+    setBusy(null);
   }
 
   const rows = preview ? (onlyProblems ? preview.rows.filter((r) => r.status !== "ok") : preview.rows) : [];
@@ -186,7 +180,14 @@ export function ImportClient({ aiAvailable }: { aiAvailable: boolean }) {
               </button>
             )}
           </div>
-          {aiMsg && <p className="text-sm">{aiMsg} Review the results under AI review.</p>}
+          {aiMsg && (
+            <p className="text-sm" role="status">
+              {aiMsg}{" "}
+              <Link href="/admin/ai" className="underline">
+                Review suggestions
+              </Link>
+            </p>
+          )}
         </section>
       )}
     </div>

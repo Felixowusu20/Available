@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { describeTotals, runAiInChunks } from "@/lib/ai/run-client";
 
 type Item = {
   id: string;
@@ -60,22 +61,11 @@ export function QuestionTable({ items }: { items: Item[] }) {
   async function runAi(kind: "tag" | "quality") {
     setBusy(true);
     setMsg(null);
-    try {
-      const res = await fetch("/api/admin/ai/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, ids: [...selected] }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error ?? "Failed");
-      setMsg(`AI run finished: ${data.succeeded} ok, ${data.failed} failed. Review the suggestions under AI review.`);
-      setSelected(new Set());
-      router.refresh();
-    } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Failed");
-    } finally {
-      setBusy(false);
-    }
+    const totals = await runAiInChunks(kind, [...selected], (p) => setMsg(`Running AI… ${p.done} of ${p.total} questions`));
+    setMsg(`${describeTotals(totals)} Review them under AI review.`);
+    setSelected(new Set());
+    setBusy(false);
+    router.refresh();
   }
 
   return (

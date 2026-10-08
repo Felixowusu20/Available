@@ -1,6 +1,6 @@
 /** Accuracy bar made of two divs; no chart library. Colour shifts with the value. */
-export function Bar({ pct, label }: { pct: number; label?: string }) {
-  const tone = pct >= 70 ? "bg-ok" : pct >= 50 ? "bg-warn" : "bg-bad";
+export function Bar({ pct, label, neutral = false }: { pct: number; label?: string; neutral?: boolean }) {
+  const tone = neutral ? "bg-accent" : pct >= 70 ? "bg-ok" : pct >= 50 ? "bg-warn" : "bg-bad";
   return (
     <div
       className="h-2.5 w-full overflow-hidden rounded-full bg-line"

@@ -1,0 +1,57 @@
+# Local and single-VPS deployment: app + PostgreSQL.
+#   1. cp .env.example .env   and fill it in (set POSTGRES_PASSWORD too)
+#   2. docker compose up -d --build
+# Migrations run automatically through the one-shot `migrate` service before the app starts.
+
+x-app-env: &app-env
+  # Inside the compose network the database host is `db`; this overrides DATABASE_URL from .env.
+  DATABASE_URL: postgresql://mdc:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/mdc?schema=public
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mdc
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: mdc
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mdc -d mdc"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Not published to the host by default. Uncomment for local tools such as psql/Prisma Studio:
+    # ports: ["127.0.0.1:5432:5432"]
+
+  migrate:
+    build: { context: ., target: tools }
+    env_file: .env
+    environment: *app-env
+    command: ["npx", "prisma", "migrate", "deploy"]
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+
+  app:
+    build: { context: ., target: runner }
+    restart: unless-stopped
+    env_file: .env
+    environment: *app-env
+    ports:
+      - "127.0.0.1:3000:3000" # bind to localhost; put a reverse proxy (see DEPLOYMENT.md) in front
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  # On-demand tools, e.g.:  docker compose run --rm tools npm run db:seed:admin
+  tools:
+    build: { context: ., target: tools }
+    profiles: ["tools"]
+    env_file: .env
+    environment: *app-env
+    depends_on:
+      db: { condition: service_healthy }
+
+volumes:
+  pgdata:

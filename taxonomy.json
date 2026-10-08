@@ -1,0 +1,27 @@
+{
+  "PRECLINICAL": {
+    "Anatomy": ["Upper limb", "Lower limb", "Thorax", "Abdomen", "Pelvis and perineum", "Head and neck", "Back and spine", "Neuroanatomy"],
+    "Embryology and histology": ["General embryology", "Organ development", "Congenital anomalies", "Tissue histology"],
+    "Physiology": ["Cell and nerve/muscle", "Cardiovascular", "Respiratory", "Renal and acid-base", "Gastrointestinal", "Endocrine", "Reproductive", "Neurophysiology", "Blood"],
+    "Biochemistry": ["Carbohydrate metabolism", "Lipid metabolism", "Protein and amino acid metabolism", "Enzymes", "Vitamins and nutrition", "Molecular biology", "Inborn errors", "Clinical chemistry"],
+    "Genetics": ["Inheritance patterns", "Chromosomal disorders", "Genetic testing"],
+    "Pathology": ["Cell injury and inflammation", "Haemodynamics", "Neoplasia", "Systemic pathology", "Haematopathology"],
+    "Pharmacology": ["General principles", "Autonomic", "Cardiovascular", "CNS", "Antimicrobials and antiparasitics", "Endocrine", "Anticancer", "Toxicology"],
+    "Microbiology": ["Bacteriology", "Virology", "Mycology", "Parasitology", "Infection control"],
+    "Immunology": ["Innate and adaptive immunity", "Hypersensitivity", "Immunodeficiency", "Transplant", "Vaccines"]
+  },
+  "CLINICAL": {
+    "Internal medicine": ["Cardiology", "Respiratory", "Gastroenterology and hepatology", "Nephrology", "Endocrinology", "Neurology", "Haematology", "Oncology", "Rheumatology", "Dermatology", "Infectious and tropical diseases", "Geriatrics"],
+    "Surgery": ["General surgery", "Trauma", "Urology", "Orthopaedics", "Neurosurgery", "Cardiothoracic", "Paediatric surgery", "Plastics and burns"],
+    "Obstetrics": ["Antenatal care", "Complications of pregnancy", "Labour and delivery", "Puerperium"],
+    "Gynaecology": ["Menstrual disorders", "Infections", "Gynaecological oncology", "Infertility", "Contraception"],
+    "Paediatrics": ["Neonatology", "Growth and development", "Nutrition", "Immunisation", "Childhood infections", "Paediatric emergencies"],
+    "Psychiatry": ["General psychiatry"],
+    "ENT": ["General ENT"],
+    "Ophthalmology": ["General ophthalmology"],
+    "Anaesthesia and critical care": ["General"],
+    "Emergency medicine": ["General"],
+    "Community health": ["Epidemiology", "Biostatistics", "Disease control", "Health systems", "Environmental and occupational health"],
+    "Ethics and forensic medicine": ["Consent", "Confidentiality", "Negligence", "Medical law", "Forensic pathology"]
+  }
+}

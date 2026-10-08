@@ -1,0 +1,5 @@
+{
+  "_help": "Maps each topic label in mdc-mock-200.html to a taxonomy entry. Run `npm run db:seed -- --report-topics` to list the topics found. Keys under PRE must map to a PRECLINICAL discipline; keys under CLI to a CLINICAL one. Both must exist in taxonomy.json.",
+  "PRE": {},
+  "CLI": {}
+}

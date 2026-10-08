@@ -1,0 +1,24 @@
+# Database only, for local development with `npm run dev` on the host.
+#   docker compose -f docker-compose.dev.yml up -d
+# Creates two databases: `mdc` (development) and `mdc_test` (Playwright / integration tests).
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mdc
+      POSTGRES_PASSWORD: mdc
+      POSTGRES_DB: mdc
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+      - ./scripts/dev-init.sql:/docker-entrypoint-initdb.d/dev-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mdc -d mdc"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata-dev:

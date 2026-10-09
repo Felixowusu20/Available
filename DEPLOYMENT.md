@@ -136,6 +136,13 @@ npm run db:seed
 
 Run `npx prisma migrate deploy` again after every release that adds a migration, **before** (or immediately after) the deploy goes live.
 
+Two cautions for this step:
+
+- **Use the provider's *direct* (non-pooled) connection string for migrations**, even though the running app uses the pooled one. Poolers in transaction mode (PgBouncer) can break migrations because Prisma takes a lock. Check what will happen first, without changing anything: `npx prisma migrate status` lists migrations that are still pending.
+- **Use a database that is empty or dedicated to this app.** If the database already holds tables from another project with the same names (`User`, `Account`, `Question`...), `migrate deploy` will refuse or fail. If it reports that the database "is not empty", stop and use a fresh database rather than forcing it.
+
+If you prefer migrations to run automatically on every Vercel deploy, set the project's Build Command to `npx prisma migrate deploy && npm run build` (with `DATABASE_URL` set to the direct connection string for the build).
+
 **Check it worked** (no login needed):
 
 ```bash

@@ -134,6 +134,8 @@ ADMIN_SEED_EMAIL="you@example.com" ADMIN_SEED_PASSWORD="a long passphrase" npm r
 npm run db:seed
 ```
 
+To load a larger question file (JSON or CSV) into the hosted database, with `DATABASE_URL` still set in your shell: `npx tsx scripts/import-file.ts "<file>"` previews it without writing anything; add `--commit` to import as drafts and `--publish` to publish the tagged ones. Check the "Target database" line it prints first. `npx tsx scripts/verify-bank.ts` then reports on the result.
+
 Run `npx prisma migrate deploy` again after every release that adds a migration, **before** (or immediately after) the deploy goes live.
 
 Two cautions for this step:

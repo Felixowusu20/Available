@@ -89,6 +89,17 @@ Admin → **Import**. A JSON file is an array of objects:
 
 Only `stem`, `options` (exactly 4) and the correct answer are required. `correct` is a letter A–D or a number 1–4; `correctIndex` is 0–3. Tags are optional and must match [taxonomy.json](taxonomy.json) (case-insensitive); untagged questions can be tagged by the AI or by hand. CSV works too (columns `stem`, `options` separated by `|` or `A`–`D`, `correct`, …). The importer shows every row's status before saving anything.
 
+**Large files from the command line.** `scripts/import-file.ts` runs the same validation and duplicate checks as the Import screen, which is handier for thousands of questions (it can also publish the tagged ones in one step):
+
+```bash
+npx tsx scripts/import-file.ts "C:\path\questions.json"                    # preview only, writes nothing
+npx tsx scripts/import-file.ts "C:\path\questions.json" --commit           # import as drafts
+npx tsx scripts/import-file.ts "C:\path\questions.json" --commit --publish # ...and publish the tagged ones
+npx tsx scripts/verify-bank.ts                                             # report on the bank and test the mock rules
+```
+
+It prints the database it is about to write to before doing anything; check that line. To load a hosted database, set `DATABASE_URL` in your shell first (see [DEPLOYMENT.md](DEPLOYMENT.md)).
+
 ## The AI features
 
 Needs `ANTHROPIC_API_KEY`. Models and effort are set in `.env` (`AI_TAGGING_MODEL`, `AI_QUALITY_MODEL`, `AI_QUALITY_EFFORT`), so they can change without code edits.

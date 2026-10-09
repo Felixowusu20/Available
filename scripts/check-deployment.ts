@@ -48,6 +48,20 @@ async function main() {
     return;
   }
 
+  // 1b. what is already in this database? (Read-only. Guards against pointing at another app's database.)
+  const KNOWN = new Set(["User", "Account", "AuthToken", "Question", "PracticeSession", "SessionQuestion", "Answer", "Bookmark", "RateLimit", "AiRun", "AiSuggestion", "_prisma_migrations"]);
+  const tables = (await db.$queryRaw<{ table_name: string }[]>`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY 1`).map((t) => t.table_name);
+  const foreign = tables.filter((t) => !KNOWN.has(t));
+  const ours = tables.filter((t) => KNOWN.has(t) && t !== "_prisma_migrations");
+  if (tables.length === 0) {
+    line("PASS", "the database is empty (no tables yet), so it is safe to create this app's tables here");
+  } else if (foreign.length > 0) {
+    line("FAIL", `STOP: this database holds ${foreign.length} table(s) that are not part of this app: ${foreign.slice(0, 8).join(", ")}${foreign.length > 8 ? ", ..." : ""}`, "It probably belongs to another application. Do NOT run migrate deploy here. Create a separate, empty database for this app.");
+    return;
+  } else {
+    line("INFO", `${ours.length} of this app's ${KNOWN.size - 1} tables already exist`);
+  }
+
   // 2. migrations
   const expected = readdirSync(path.resolve("prisma/migrations"), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
   let applied: string[] = [];
@@ -55,7 +69,11 @@ async function main() {
     const rows = await db.$queryRaw<{ migration_name: string; finished_at: Date | null }[]>`SELECT migration_name, finished_at FROM _prisma_migrations`;
     applied = rows.filter((r) => r.finished_at).map((r) => r.migration_name);
   } catch {
-    line("FAIL", "no migration history: the database has no tables yet", "Run: npx prisma migrate deploy   (with DATABASE_URL set to this database). Until then every sign-in attempt fails with 'We couldn't sign you in right now'.");
+    if (ours.length > 0) {
+      line("FAIL", `STOP: ${ours.length} of this app's tables exist (${ours.slice(0, 5).join(", ")}${ours.length > 5 ? ", ..." : ""}) but there is NO migration history`, "Something other than Prisma Migrate created them. Do NOT run migrate deploy: it would fail or conflict. Tell whoever set this up, or use a fresh database.");
+    } else {
+      line("FAIL", "no migration history: the database is empty, so the migrations have never been run", "Run: npx prisma migrate deploy   (with DATABASE_URL set to this database). Until then every sign-in attempt fails with 'We couldn't sign you in right now'.");
+    }
     return;
   }
   const missing = expected.filter((m) => !applied.includes(m));

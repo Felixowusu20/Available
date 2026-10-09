@@ -138,6 +138,7 @@ Run `npx prisma migrate deploy` again after every release that adds a migration,
 
 Two cautions for this step:
 
+- **Prisma Postgres** (the Vercel Marketplace database from Prisma): both strings are plain `postgres://...?sslmode=require` URLs with the same credentials. The **direct** one uses host `db.prisma.io` (use it for migrations and admin tools); the **pooled** one uses `pooled.db.prisma.io` (use it for the running app). The Vercel integration sets a single `DATABASE_URL`; look at its host to see which kind it is. Both are available in the Prisma Console under *Connect to your database*.
 - **Use the provider's *direct* (non-pooled) connection string for migrations**, even though the running app uses the pooled one. Poolers in transaction mode (PgBouncer) can break migrations because Prisma takes a lock. Check what will happen first, without changing anything: `npx prisma migrate status` lists migrations that are still pending.
 - **Use a database that is empty or dedicated to this app.** If the database already holds tables from another project with the same names (`User`, `Account`, `Question`...), `migrate deploy` will refuse or fail. If it reports that the database "is not empty", stop and use a fresh database rather than forcing it.
 
@@ -169,7 +170,7 @@ $env:CHECK_PASSWORD = "<the password you are trying>"; npx tsx scripts/check-dep
 npx tsx scripts/check-deployment.ts --email you@example.com --clear-login-limits    # lifts a lockout
 ```
 
-It reports whether the migrations ran, whether an admin exists, whether the password matches, and whether the email is locked out, and says what to run to fix each. It never prints passwords or hashes. The seed scripts and `prisma migrate deploy` read `DATABASE_URL` from your shell first and from `.env` only if the shell has none, so **set it in the shell before running them** or they will quietly target your local database.
+It first lists what the database already contains and prints **STOP** if it holds another application's tables, or this app's tables without a migration history (never run `migrate deploy` in that case). `prisma migrate status` is read-only but does *not* warn about another app's tables, so run this checker first. It then reports whether the migrations ran, whether an admin exists, whether the password matches, and whether the email is locked out, and says what to run to fix each. It never prints passwords or hashes. The seed scripts and `prisma migrate deploy` read `DATABASE_URL` from your shell first and from `.env` only if the shell has none, so **set it in the shell before running them** or they will quietly target your local database.
 
 ## 6. HTTPS and the reverse proxy
 

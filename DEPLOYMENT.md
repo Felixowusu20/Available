@@ -109,6 +109,42 @@ Any platform that runs a Docker image works (Render, Railway, Fly.io, DigitalOce
 
 Run **one** app instance at first; more are fine (sessions are in signed cookies, rate limits are in the database), but size `DATABASE_POOL_MAX` so instances × pool ≤ your plan's connection limit.
 
+### 5b. Deploying on Vercel
+
+Vercel builds the app itself (framework preset **Next.js**, default build command `npm run build`); the Dockerfile is not used. It needs a PostgreSQL database reachable from Vercel (Vercel Postgres, Neon, Supabase, or your own).
+
+**Set these environment variables for the *Production* environment** (Project → Settings → Environment Variables), then **redeploy**: changes only apply to new deployments.
+
+| Variable | Notes |
+|---|---|
+| `AUTH_SECRET` | **Required.** If it is missing, every `/api/auth/*` route returns `500 "There was a problem with the server configuration"` and **nobody can sign in**, while `/api/health` still says ok. Generate with `openssl rand -base64 32`. |
+| `DATABASE_URL` | Use the provider's **pooled** connection string (Neon: the `-pooler` host; Supabase: the transaction pooler on port 6543). Serverless functions open many short connections. |
+| `DATABASE_POOL_MAX` | `1` to `3`. Each function instance keeps its own pool. |
+| `APP_URL` | The public address, e.g. `https://tertiaryguide-available.vercel.app` (or your custom domain). Emailed links are built from it. |
+| `AUTH_TRUST_HOST` | `true` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM` | **Required in practice.** Email verification is on, and production never logs links, so without SMTP only the seeded admin can sign in. |
+| `ANTHROPIC_API_KEY` and `AI_*` | Optional. |
+
+**Create the tables and the first data from your own machine**, pointing at the production database (Vercel does not run migrations for you):
+
+```bash
+export DATABASE_URL="<production connection string>"       # PowerShell: $env:DATABASE_URL = "..."
+npx prisma migrate deploy
+ADMIN_SEED_EMAIL="you@example.com" ADMIN_SEED_PASSWORD="a long passphrase" npm run db:seed:admin
+npm run db:seed
+```
+
+Run `npx prisma migrate deploy` again after every release that adds a migration, **before** (or immediately after) the deploy goes live.
+
+**Check it worked** (no login needed):
+
+```bash
+curl -s https://<your-site>/api/auth/csrf        # must return {"csrfToken":"..."}; a 500 means AUTH_SECRET is missing
+curl -s https://<your-site>/api/health           # {"status":"ok"}
+```
+
+Notes: AI runs set `maxDuration = 300` seconds; if your Vercel plan allows less, Vercel caps it, so run fewer questions at a time. The first request after idle time is slower (a cold start of a few seconds).
+
 ## 6. HTTPS and the reverse proxy
 
 > **Important – rate limiting depends on the proxy.** Login, sign-up and AI limits are keyed on the client IP taken from `X-Forwarded-For`. Your proxy must **overwrite** that header with the real client address (the examples below do). If it passes along whatever the client sent, attackers can dodge the limits. If it does not set it at all, every user shares one IP and the limit locks everyone out. Test it (section 10).

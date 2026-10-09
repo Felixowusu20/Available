@@ -145,6 +145,25 @@ curl -s https://<your-site>/api/health           # {"status":"ok"}
 
 Notes: AI runs set `maxDuration = 300` seconds; if your Vercel plan allows less, Vercel caps it, so run fewer questions at a time. The first request after idle time is slower (a cold start of a few seconds).
 
+**If the admin (or anyone) cannot sign in after deploying**, first note which message the sign-in page shows, then run the checker against the *hosted* database:
+
+| Message on the sign-in page | Meaning |
+|---|---|
+| "Incorrect email or password" | No such account in the hosted database (most often the admin was created in your **local** database), a typo, or a different password. |
+| "We couldn't sign you in right now" | The database has no tables (migrations not run) or can't be reached. |
+| "Too many attempts" | 8 failed tries in 15 minutes for that email; wait, or clear it (below). |
+| "Please verify your email first" | An ordinary sign-up that is not verified yet (the seeded admin is already verified). |
+
+```bash
+# PowerShell; bash: export DATABASE_URL="..."
+$env:DATABASE_URL = "<the HOSTED database connection string>"     # type it here; do not rely on .env
+npx tsx scripts/check-deployment.ts --email you@example.com
+$env:CHECK_PASSWORD = "<the password you are trying>"; npx tsx scripts/check-deployment.ts --email you@example.com
+npx tsx scripts/check-deployment.ts --email you@example.com --clear-login-limits    # lifts a lockout
+```
+
+It reports whether the migrations ran, whether an admin exists, whether the password matches, and whether the email is locked out, and says what to run to fix each. It never prints passwords or hashes. The seed scripts and `prisma migrate deploy` read `DATABASE_URL` from your shell first and from `.env` only if the shell has none, so **set it in the shell before running them** or they will quietly target your local database.
+
 ## 6. HTTPS and the reverse proxy
 
 > **Important – rate limiting depends on the proxy.** Login, sign-up and AI limits are keyed on the client IP taken from `X-Forwarded-For`. Your proxy must **overwrite** that header with the real client address (the examples below do). If it passes along whatever the client sent, attackers can dodge the limits. If it does not set it at all, every user shares one IP and the limit locks everyone out. Test it (section 10).

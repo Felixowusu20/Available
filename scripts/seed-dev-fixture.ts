@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env";
 import { db } from "../src/lib/db";
 import { insertQuestionIfNew } from "../src/lib/question-store";
 import { flatTaxonomy } from "../src/lib/taxonomy";

@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth-shell";
-import { getCurrentUser } from "@/lib/guards";
+import { getCurrentUser, homeFor } from "@/lib/guards";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in" };
 
 export default async function LoginPage() {
-  if (await getCurrentUser()) redirect("/dashboard");
+  const user = await getCurrentUser();
+  if (user) redirect(homeFor(user));
   return (
     <AuthShell
       title="Sign in"

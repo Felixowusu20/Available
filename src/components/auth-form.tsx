@@ -66,7 +66,7 @@ export function PostForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4" noValidate>
+    <form onSubmit={onSubmit} className="space-y-3" noValidate>
       {fields.map((f) => (
         <div key={f.name}>
           <label htmlFor={f.name} className="mb-1 block text-sm font-medium">

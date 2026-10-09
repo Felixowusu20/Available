@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { Icon } from "@/components/icons";
 import { listFiltersSchema, listQuestions } from "@/lib/admin/questions";
 import { SECTIONS, taxonomy } from "@/lib/taxonomy";
 import { QuestionTable } from "./question-table";
 
-export const metadata = { title: "Questions" };
+export const metadata = { title: "Question bank" };
 
 type SP = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
@@ -34,11 +35,21 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
 
   return (
     <main className="mx-auto max-w-5xl space-y-4 px-4 py-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Questions</h1>
-        <Link href="/admin/questions/new" className="btn">
-          New question
-        </Link>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Question bank</h1>
+          <p className="mt-1 text-sm text-muted">Tag each question, then publish it. Only published questions show up in student practice.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/questions/new" className="btn">
+            <Icon name="plus" className="size-4" />
+            New question
+          </Link>
+          <Link href="/admin/import" className="btn btn-ghost">
+            <Icon name="upload" className="size-4" />
+            Import
+          </Link>
+        </div>
       </div>
 
       <form method="get" className="card grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-4" role="search">
@@ -105,6 +116,19 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
       </p>
 
       <QuestionTable
+        empty={
+          <div className="space-y-3 p-4">
+            <p className="text-muted">{one(sp.q) || one(sp.status) || one(sp.section) || topic || one(sp.untagged) || one(sp.flagged) ? "No questions match these filters." : "The bank is empty. Add a question or import a file. New questions stay drafts until you tag and publish them."}</p>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/admin/questions/new" className="btn">
+                New question
+              </Link>
+              <Link href="/admin/import" className="btn btn-ghost">
+                Import
+              </Link>
+            </div>
+          </div>
+        }
         items={items.map((i) => ({
           id: i.id,
           stem: i.stem,

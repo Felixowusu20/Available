@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env";
 import { db } from "../src/lib/db";
 
 // Read-only summary of the question bank by source, status and section. Handy after seeding or importing.

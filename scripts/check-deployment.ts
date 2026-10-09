@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env";
 import { readdirSync } from "node:fs";
 import path from "node:path";
 import { verify } from "@node-rs/argon2";

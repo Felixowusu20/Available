@@ -4,8 +4,8 @@
   "private": true,
   "engines": { "node": ">=22" },
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
+    "dev": "NEXT_TEST_WASM=1 next dev --webpack",
+    "build": "prisma generate && NEXT_TEST_WASM=1 next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

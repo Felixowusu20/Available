@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env";
 import { db } from "../src/lib/db";
 import { hashPassword } from "../src/lib/password";
 import { emailSchema, passwordSchema } from "../src/lib/validation";

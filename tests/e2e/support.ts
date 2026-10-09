@@ -44,13 +44,13 @@ export async function closeDb() {
  */
 export const appAlert = (page: Page) => page.locator('[role="alert"]:not(#__next-route-announcer__)');
 
-export async function logIn(page: Page, who: { email: string; password: string }) {
+export async function logIn(page: Page, who: { email: string; password: string }, destination: RegExp = /\/dashboard/) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(who.email);
   await page.getByLabel("Password").fill(who.password);
   await page.getByRole("button", { name: "Sign in" }).click();
   // Password hashing is deliberately slow and a busy machine can stretch it, so allow a generous wait.
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+  await expect(page).toHaveURL(destination, { timeout: 30_000 });
 }
 
 /** Wait until the practice runner has hydrated, so keyboard shortcuts are live. */

@@ -31,8 +31,11 @@ export default async function PracticePage() {
   }));
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-4 py-6">
-      <h1 className="text-2xl font-bold">Practice</h1>
+    <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+      <div>
+        <h1 className="text-2xl font-bold">Practice</h1>
+        <p className="mt-1 text-sm text-muted">Timed mocks and topic practice. Only published questions are included.</p>
+      </div>
       <StartPractice
         tree={tree}
         secondsPerQuestion={env().EXAM_SECONDS_PER_QUESTION}

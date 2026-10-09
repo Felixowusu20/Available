@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { parseImport } from "../src/lib/admin/import";

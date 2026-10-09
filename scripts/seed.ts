@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env";
 import { createHash } from "node:crypto";
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";

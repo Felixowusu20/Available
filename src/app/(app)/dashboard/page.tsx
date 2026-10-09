@@ -43,9 +43,12 @@ export default async function DashboardPage() {
   const inProgress = d.recent.filter((s) => !s.finished);
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-4 py-6">
+    <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-2xl font-bold">Hello{user.name ? `, ${user.name.split(" ")[0]}` : ""}</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Hello{user.name ? `, ${user.name.split(" ")[0]}` : ""}</h1>
+          <p className="mt-1 text-sm text-muted">Your progress for the Ghana Medical and Dental Council licensure exam.</p>
+        </div>
         <Link href="/practice" className="btn">
           Start practising
         </Link>

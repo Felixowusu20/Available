@@ -194,11 +194,11 @@ test.describe("access control and presentation", () => {
 
     const ctx = await browser.newContext();
     const adminPage = await ctx.newPage();
-    await logIn(adminPage, await createUser("ADMIN"));
+    await logIn(adminPage, await createUser("ADMIN"), /\/admin$/);
     await adminPage.goto("/admin");
     await expect(adminPage.getByRole("heading", { name: "Admin" })).toBeVisible();
     await adminPage.goto("/admin/questions");
-    await expect(adminPage.getByRole("heading", { name: "Questions" })).toBeVisible();
+    await expect(adminPage.getByRole("heading", { name: "Question bank" })).toBeVisible();
     await ctx.close();
   });
 

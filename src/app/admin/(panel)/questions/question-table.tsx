@@ -22,7 +22,7 @@ const STATUS_STYLE: Record<Item["status"], string> = {
   RETIRED: "bg-line text-muted",
 };
 
-export function QuestionTable({ items }: { items: Item[] }) {
+export function QuestionTable({ items, empty }: { items: Item[]; empty?: React.ReactNode }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -105,7 +105,7 @@ export function QuestionTable({ items }: { items: Item[] }) {
           <input type="checkbox" className="size-5" checked={allSelected} onChange={() => setSelected(allSelected ? new Set() : new Set(items.map((i) => i.id)))} />
           Select all on this page
         </label>
-        {items.length === 0 && <p className="p-4 text-muted">No questions match.</p>}
+        {items.length === 0 && (empty ?? <p className="p-4 text-muted">No questions match.</p>)}
         <ul className="divide-y divide-line">
           {items.map((q) => (
             <li key={q.id} className="flex items-start gap-3 p-3">

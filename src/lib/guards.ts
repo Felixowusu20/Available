@@ -20,6 +20,11 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   return { id: user.id, email: user.email, name: user.name, role: user.role };
 }
 
+/** Where a signed-in user should land. Admins open the console; everyone else opens the student dashboard. */
+export function homeFor(user: CurrentUser): "/admin" | "/dashboard" {
+  return user.role === "ADMIN" ? "/admin" : "/dashboard";
+}
+
 /** For pages / server components: redirects to /login when signed out. */
 export async function requireUser(): Promise<CurrentUser> {
   const user = await getCurrentUser();
@@ -27,11 +32,14 @@ export async function requireUser(): Promise<CurrentUser> {
   return user;
 }
 
-/** For pages: redirects non-admins home. */
+/** For admin pages. Sends visitors to setup when no admin exists, and students back to the dashboard. */
 export async function requireAdmin(): Promise<CurrentUser> {
-  const user = await requireUser();
-  if (user.role !== "ADMIN") redirect("/");
-  return user;
+  const user = await getCurrentUser();
+  if (user?.role === "ADMIN") return user;
+  const admins = await db.user.count({ where: { role: "ADMIN" } });
+  if (admins === 0) redirect("/admin/setup");
+  if (!user) redirect("/login");
+  redirect("/dashboard");
 }
 
 /** For route handlers: returns the user or a ready-made 401/403 Response. */

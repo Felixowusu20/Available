@@ -167,6 +167,7 @@ export function QuestionForm({ initial, tree }: { initial: QuestionFormValues; t
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium">Status</span>
+          <span className="mb-1 block text-xs text-muted">Students only see Published, and that requires a section, discipline and subtopic.</span>
           <select className="input" value={v.status} onChange={(e) => set("status", e.target.value as QuestionFormValues["status"])}>
             <option value="DRAFT">Draft</option>
             <option value="IN_REVIEW">In review</option>

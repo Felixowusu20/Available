@@ -2,17 +2,23 @@
 
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
+import { db } from "@/lib/db";
 import { logger, safeError } from "@/lib/logger";
+import { emailSchema } from "@/lib/validation";
 
 export type LoginState = { error?: string; unverifiedEmail?: string } | undefined;
 
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get("email") ?? "");
+  const parsedEmail = emailSchema.safeParse(email);
+  const existing = parsedEmail.success
+    ? await db.user.findUnique({ where: { email: parsedEmail.data }, select: { role: true } })
+    : null;
   try {
     await signIn("credentials", {
       email,
       password: String(formData.get("password") ?? ""),
-      redirectTo: "/dashboard",
+      redirectTo: existing?.role === "ADMIN" ? "/admin" : "/dashboard",
     });
   } catch (err) {
     if (err instanceof AuthError) {

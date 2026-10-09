@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "./load-env";
 import { db } from "../src/lib/db";
 import { createSession } from "../src/lib/practice/service";
 

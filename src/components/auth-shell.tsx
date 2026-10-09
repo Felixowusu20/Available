@@ -4,7 +4,7 @@ export function AuthShell({ title, children, footer }: { title: string; children
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 py-8">
       <Link href="/" className="mb-6 text-lg font-bold text-accent">
-        MDC Practice
+        Available
       </Link>
       <div className="card p-5">
         <h1 className="mb-4 text-xl font-semibold">{title}</h1>

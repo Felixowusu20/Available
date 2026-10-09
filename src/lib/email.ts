@@ -47,7 +47,7 @@ export async function sendVerificationEmail(to: string, token: string) {
   const link = `${env().APP_URL}/verify-email?token=${encodeURIComponent(token)}`;
   await emailAdapter().send({
     to,
-    subject: "Verify your email for MDC Practice",
+    subject: "Verify your email for Available",
     text: `Welcome! Confirm your email address by opening this link (valid for 24 hours):\n\n${link}\n\nIf you did not sign up, ignore this message.`,
   });
 }
@@ -56,7 +56,7 @@ export async function sendPasswordResetEmail(to: string, token: string) {
   const link = `${env().APP_URL}/reset-password?token=${encodeURIComponent(token)}`;
   await emailAdapter().send({
     to,
-    subject: "Reset your MDC Practice password",
+    subject: "Reset your Available password",
     text: `Open this link to choose a new password (valid for 1 hour):\n\n${link}\n\nIf you did not ask for this, ignore this message.`,
   });
 }

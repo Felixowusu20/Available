@@ -1,4 +1,4 @@
-# MDC Practice
+# Available
 
 A web platform for Ghanaian medical students preparing for the **Medical and Dental Council (MDC) licensure exam**: 200 single-best-answer MCQs, 100 preclinical and 100 clinical.
 

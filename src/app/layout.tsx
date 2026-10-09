@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "MDC Practice", template: "%s · MDC Practice" },
+  title: { default: "Available", template: "%s · Available" },
   description: "Practice questions and timed mocks for the Ghana Medical and Dental Council licensure exam.",
 };
 

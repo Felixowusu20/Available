@@ -11,7 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="border-b border-line bg-card">
         <nav className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 text-sm" aria-label="Main">
           <Link href="/dashboard" className="mr-2 text-base font-bold text-accent">
-            MDC Practice
+            Available
           </Link>
           <Link href="/dashboard" className="py-1 hover:underline">
             Dashboard

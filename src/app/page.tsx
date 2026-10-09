@@ -7,7 +7,7 @@ export default async function Home() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-4 py-10">
       <div>
-        <h1 className="text-3xl font-bold">MDC Practice</h1>
+        <h1 className="text-3xl font-bold">Available</h1>
         <p className="mt-2 text-muted">
           Timed mocks and topic practice for the Ghana Medical and Dental Council licensure exam, with an explanation for every
           question.

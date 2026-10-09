@@ -12,7 +12,7 @@ const schema = z.object({
   AUTH_SECRET: z.string().min(16),
   REQUIRE_EMAIL_VERIFICATION: bool(true),
 
-  EMAIL_FROM: z.string().default("MDC Practice <no-reply@example.com>"),
+  EMAIL_FROM: z.string().default("Available <no-reply@example.com>"),
   SMTP_HOST: z.string().optional().default(""),
   SMTP_PORT: z.coerce.number().int().default(587),
   SMTP_SECURE: bool(false),

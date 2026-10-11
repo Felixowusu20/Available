@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { requireUser } from "@/lib/guards";
+import { getAvailability } from "@/lib/practice/availability";
 import { SECTIONS, taxonomy } from "@/lib/taxonomy";
 import { StartPractice } from "./start-practice";
 
@@ -9,7 +10,7 @@ export const metadata = { title: "Practice" };
 export default async function PracticePage() {
   const user = await requireUser();
 
-  const [counts, bookmarkCount, answers] = await Promise.all([
+  const [counts, bookmarkCount, answers, left] = await Promise.all([
     db.question.groupBy({ by: ["section"], where: { status: "PUBLISHED" }, _count: true }),
     db.bookmark.count({ where: { userId: user.id, question: { status: "PUBLISHED" } } }),
     db.answer.findMany({
@@ -17,6 +18,7 @@ export default async function PracticePage() {
       orderBy: { answeredAt: "desc" },
       select: { questionId: true, correct: true },
     }),
+    getAvailability(user.id),
   ]);
   const available = { PRECLINICAL: 0, CLINICAL: 0 };
   for (const c of counts) if (c.section) available[c.section] = c._count;
@@ -37,6 +39,7 @@ export default async function PracticePage() {
         tree={tree}
         secondsPerQuestion={env().EXAM_SECONDS_PER_QUESTION}
         available={available}
+        left={left}
         missedCount={missedCount}
         bookmarkCount={bookmarkCount}
       />

@@ -21,6 +21,7 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
     subtopic: subtopic || undefined,
     untagged: one(sp.untagged),
     flagged: one(sp.flagged),
+    priority: one(sp.priority),
     page: one(sp.page),
   });
   const filters = parsed.success ? parsed.data : listFiltersSchema.parse({});
@@ -28,7 +29,7 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
 
   const keep = (extra: Record<string, string>) => {
     const p = new URLSearchParams();
-    for (const [k, v] of Object.entries({ q: one(sp.q), status: one(sp.status), section: one(sp.section), topic, untagged: one(sp.untagged), flagged: one(sp.flagged), ...extra })) if (v) p.set(k, v);
+    for (const [k, v] of Object.entries({ q: one(sp.q), status: one(sp.status), section: one(sp.section), topic, untagged: one(sp.untagged), flagged: one(sp.flagged), priority: one(sp.priority), ...extra })) if (v) p.set(k, v);
     return `/admin/questions?${p.toString()}`;
   };
 
@@ -91,6 +92,9 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
         <label className="flex min-h-10 items-center gap-2 self-end text-sm">
           <input type="checkbox" name="flagged" value="1" defaultChecked={!!one(sp.flagged)} className="size-5" /> Has AI suggestions
         </label>
+        <label className="flex min-h-10 items-center gap-2 self-end text-sm">
+          <input type="checkbox" name="priority" value="1" defaultChecked={!!one(sp.priority)} className="size-5" /> High priority only
+        </label>
         <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
           <button className="btn">Filter</button>
           <Link href="/admin/questions" className="btn btn-ghost">
@@ -112,6 +116,7 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
           section: i.section,
           discipline: i.discipline,
           subtopic: i.subtopic,
+          highPriority: i.highPriority,
           pendingAi: i._count.suggestions,
         }))}
       />

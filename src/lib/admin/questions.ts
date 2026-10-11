@@ -16,6 +16,7 @@ export const listFiltersSchema = z.object({
   subtopic: z.string().max(100).optional(),
   untagged: z.literal("1").optional(),
   flagged: z.literal("1").optional(),
+  priority: z.literal("1").optional(),
   page: z.coerce.number().int().min(1).max(10_000).default(1),
 });
 export type ListFilters = z.infer<typeof listFiltersSchema>;
@@ -28,6 +29,7 @@ export async function listQuestions(f: ListFilters) {
     ...(f.subtopic && { subtopic: f.subtopic }),
     ...(f.untagged && { section: null }),
     ...(f.flagged && { suggestions: { some: { status: "PENDING" } } }),
+    ...(f.priority && { highPriority: true }),
     ...(f.q && { OR: [{ stem: { contains: f.q, mode: "insensitive" } }, { explanation: { contains: f.q, mode: "insensitive" } }, { source: { contains: f.q, mode: "insensitive" } }] }),
   };
   const [total, items] = await Promise.all([
@@ -38,7 +40,7 @@ export async function listQuestions(f: ListFilters) {
       skip: (f.page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       select: {
-        id: true, stem: true, status: true, section: true, discipline: true, subtopic: true, difficulty: true, updatedAt: true,
+        id: true, stem: true, status: true, section: true, discipline: true, subtopic: true, difficulty: true, highPriority: true, updatedAt: true,
         _count: { select: { suggestions: { where: { status: "PENDING" } } } },
       },
     }),
@@ -51,7 +53,8 @@ export async function statusCounts() {
   const counts = { DRAFT: 0, IN_REVIEW: 0, PUBLISHED: 0, RETIRED: 0 };
   for (const r of rows) counts[r.status] = r._count;
   const untagged = await db.question.count({ where: { section: null } });
-  return { ...counts, untagged };
+  const highPriority = await db.question.count({ where: { highPriority: true, status: "PUBLISHED" } });
+  return { ...counts, untagged, highPriority };
 }
 
 function dataFrom(input: QuestionInput) {
@@ -66,6 +69,7 @@ function dataFrom(input: QuestionInput) {
     difficulty: input.difficulty ?? null,
     source: input.source ?? null,
     status: input.status,
+    highPriority: input.highPriority,
     ...derivedFields(input),
   };
 }
@@ -132,10 +136,19 @@ export async function deleteQuestion(id: string) {
   await db.question.delete({ where: { id } });
 }
 
-export const bulkSchema = z.object({
-  ids: z.array(z.string().min(1).max(40)).min(1).max(500),
-  status: z.enum(STATUS_VALUES),
-});
+const bulkIds = z.array(z.string().min(1).max(40)).min(1).max(500);
+
+/** One bulk request either moves questions to a status or sets/clears their high-priority flag. */
+export const bulkSchema = z.union([
+  z.object({ ids: bulkIds, status: z.enum(STATUS_VALUES) }),
+  z.object({ ids: bulkIds, highPriority: z.boolean() }),
+]);
+
+/** Sets or clears the high-priority flag. Works on any status, so priority can be set before publishing. */
+export async function bulkSetPriority(ids: string[], highPriority: boolean) {
+  const res = await db.question.updateMany({ where: { id: { in: ids }, highPriority: !highPriority }, data: { highPriority } });
+  return { updated: res.count };
+}
 
 /** Moves many questions to a status. Untagged ones cannot go to review/published; they are reported back. */
 export async function bulkSetStatus(adminId: string, ids: string[], status: (typeof STATUS_VALUES)[number]) {

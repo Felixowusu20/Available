@@ -16,6 +16,7 @@ export default async function AdminHome() {
     { label: "In review", value: counts.IN_REVIEW, href: "/admin/questions?status=IN_REVIEW" },
     { label: "Drafts", value: counts.DRAFT, href: "/admin/questions?status=DRAFT" },
     { label: "Untagged", value: counts.untagged, href: "/admin/questions?untagged=1" },
+    { label: "High priority (published)", value: counts.highPriority, href: "/admin/questions?priority=1&status=PUBLISHED" },
     { label: "Retired", value: counts.RETIRED, href: "/admin/questions?status=RETIRED" },
     { label: "AI suggestions to review", value: pendingSuggestions, href: "/admin/ai" },
   ];

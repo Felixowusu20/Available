@@ -31,6 +31,7 @@ async function main() {
         difficulty: (["EASY", "MEDIUM", "HARD"] as const)[i % 3],
         source: "dev-fixture",
         status: "PUBLISHED",
+        highPriority: false,
       });
       if (res.created) created++;
     }

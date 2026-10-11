@@ -114,6 +114,15 @@ export function normaliseRow(raw: Record<string, unknown>, row: number): ParsedR
     else warnings.push(`Difficulty "${difficultyRaw}" ignored (use easy, medium or hard)`);
   }
 
+  // Optional priority column: "high"/"true"/"yes"/"1" marks the question high priority.
+  let highPriority = false;
+  const priorityRaw = clean(get("highpriority", "priority"));
+  if (priorityRaw) {
+    const p = norm(priorityRaw);
+    if (["high", "true", "yes", "y", "1", "highpriority"].includes(p)) highPriority = true;
+    else if (!["normal", "false", "no", "n", "0", "low", "none"].includes(p)) warnings.push(`Priority "${priorityRaw.slice(0, 20)}" ignored (use high or normal)`);
+  }
+
   const out: ParsedRow = { row, errors, warnings, stemPreview: stem.slice(0, 140) };
   if (errors.length) return out;
 
@@ -126,6 +135,7 @@ export function normaliseRow(raw: Record<string, unknown>, row: number): ParsedR
     difficulty,
     source: clean(get("source", "reference")) || null,
     status: "DRAFT", // imports always start as drafts, whatever the file says
+    highPriority,
   });
   if (!parsed.success) {
     for (const i of parsed.error.issues) errors.push(`${i.path.join(".") || "row"}: ${i.message}`);

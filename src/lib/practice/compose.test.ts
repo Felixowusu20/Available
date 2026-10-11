@@ -48,7 +48,61 @@ describe("composeMock", () => {
   });
 });
 
+/** Small seeded generator so the spread checks below do not depend on luck. */
+const seeded = (seed: number) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
+describe("high-priority questions in a mock", () => {
+  // The first `n` preclinical and the first `n` clinical questions (p0..p{n-1}, c0..c{n-1}) are high priority.
+  const withPriority = (n: number): PoolItem[] => pool(100, 100).map((p) => ({ ...p, highPriority: Number(p.id.slice(1)) < n }));
+  const range = (n: number) => Array.from({ length: n }, (_, i) => i);
+
+  it("includes every unseen high-priority question before ordinary ones", () => {
+    // A 50-question mock needs 25 of each section, and 20 of each are high priority.
+    const ids = new Set(composeMock(withPriority(20), 50, new Set(), seeded(1)).map((o) => o.questionId));
+    expect(range(20).every((i) => ids.has(`p${i}`) && ids.has(`c${i}`))).toBe(true);
+  });
+
+  it("spreads priority questions across the blocks instead of filling the first one", () => {
+    const out = composeMock(withPriority(50), 100, new Set(), seeded(7));
+    const high = (b: number) => out.filter((o) => o.blockIndex === b && Number(o.questionId.slice(1)) < 50).length;
+    expect(high(0) + high(1)).toBe(100); // every priority question is used
+    expect(high(0)).toBeGreaterThan(30);
+    expect(high(1)).toBeGreaterThan(30);
+  });
+
+  it("still prefers an unseen ordinary question over a seen high-priority one", () => {
+    const seenHigh = new Set(range(20).map((i) => `p${i}`));
+    const out = composeMock(withPriority(20), 50, seenHigh, seeded(3));
+    expect(out.some((o) => seenHigh.has(o.questionId))).toBe(false);
+  });
+
+  it("repeats seen high-priority questions before seen ordinary ones when it has to repeat", () => {
+    // All 100 preclinical questions have been seen and 10 are high priority; a 100-question mock needs 50.
+    const seenAll = new Set(range(100).map((i) => `p${i}`));
+    const ids = new Set(composeMock(withPriority(10), 100, seenAll, seeded(5)).map((o) => o.questionId));
+    expect(range(10).every((i) => ids.has(`p${i}`))).toBe(true);
+  });
+});
+
 describe("composeList", () => {
+  it("draws unseen high-priority questions first", () => {
+    const items = Array.from({ length: 40 }, (_, i) => ({ id: `q${i}`, highPriority: i < 6 }));
+    for (let run = 0; run < 20; run++) {
+      const ids = new Set(composeList(items, 10, new Set(), seeded(run + 11)).map((o) => o.questionId));
+      expect([0, 1, 2, 3, 4, 5].every((i) => ids.has(`q${i}`))).toBe(true);
+    }
+  });
+  it("does not let a seen high-priority question beat an unseen ordinary one", () => {
+    const items = Array.from({ length: 12 }, (_, i) => ({ id: `q${i}`, highPriority: i < 4 }));
+    const seen = new Set(["q0", "q1", "q2", "q3"]);
+    const out = composeList(items, 8, seen, seeded(2));
+    expect(out.some((o) => seen.has(o.questionId))).toBe(false);
+  });
   it("returns at most `count` unique questions, unseen first", () => {
     const items = Array.from({ length: 30 }, (_, i) => ({ id: `q${i}` }));
     const seen = new Set(items.slice(0, 20).map((i) => i.id));

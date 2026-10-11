@@ -129,15 +129,15 @@ export async function createSession(userId: string, input: CreateSessionInput): 
   let filter: Prisma.InputJsonValue | undefined;
 
   if (input.kind === "MOCK") {
-    const rows = await db.question.findMany({ where: { status: "PUBLISHED", section: { not: null } }, select: { id: true, section: true } });
-    const pool = rows.flatMap((r) => (r.section ? [{ id: r.id, section: r.section }] : []));
+    const rows = await db.question.findMany({ where: { status: "PUBLISHED", section: { not: null } }, select: { id: true, section: true, highPriority: true } });
+    const pool = rows.flatMap((r) => (r.section ? [{ id: r.id, section: r.section, highPriority: r.highPriority }] : []));
     composed = composeMock(pool, input.size, seen);
   } else if (input.kind === "TOPIC") {
     const or: Prisma.QuestionWhereInput[] = [
       ...(input.disciplines.length ? [{ discipline: { in: input.disciplines } }] : []),
       ...input.subtopics.map((s) => ({ discipline: s.discipline, subtopic: s.subtopic })),
     ];
-    const pool = await db.question.findMany({ where: { status: "PUBLISHED", OR: or }, select: { id: true } });
+    const pool = await db.question.findMany({ where: { status: "PUBLISHED", OR: or }, select: { id: true, highPriority: true } });
     if (pool.length === 0) throw new ServiceError(422, "No published questions match that selection yet.");
     composed = composeList(pool, input.count, seen);
     filter = { disciplines: input.disciplines, subtopics: input.subtopics };

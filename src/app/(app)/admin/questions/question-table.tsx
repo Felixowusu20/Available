@@ -13,6 +13,7 @@ type Item = {
   discipline: string | null;
   subtopic: string | null;
   pendingAi: number;
+  openReports: number;
 };
 
 const STATUS_STYLE: Record<Item["status"], string> = {
@@ -122,6 +123,7 @@ export function QuestionTable({ items }: { items: Item[] }) {
                     <span className="text-warn">untagged</span>
                   )}
                   {q.pendingAi > 0 && <span className="text-accent">{q.pendingAi} AI suggestion{q.pendingAi === 1 ? "" : "s"}</span>}
+                  {q.openReports > 0 && <span className="font-medium text-warn">{q.openReports} open report{q.openReports === 1 ? "" : "s"}</span>}
                 </p>
               </Link>
             </li>

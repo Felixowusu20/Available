@@ -16,6 +16,7 @@ export const listFiltersSchema = z.object({
   subtopic: z.string().max(100).optional(),
   untagged: z.literal("1").optional(),
   flagged: z.literal("1").optional(),
+  reported: z.literal("1").optional(),
   page: z.coerce.number().int().min(1).max(10_000).default(1),
 });
 export type ListFilters = z.infer<typeof listFiltersSchema>;
@@ -28,6 +29,7 @@ export async function listQuestions(f: ListFilters) {
     ...(f.subtopic && { subtopic: f.subtopic }),
     ...(f.untagged && { section: null }),
     ...(f.flagged && { suggestions: { some: { status: "PENDING" } } }),
+    ...(f.reported && { reports: { some: { status: "OPEN" } } }),
     ...(f.q && { OR: [{ stem: { contains: f.q, mode: "insensitive" } }, { explanation: { contains: f.q, mode: "insensitive" } }, { source: { contains: f.q, mode: "insensitive" } }] }),
   };
   const [total, items] = await Promise.all([
@@ -39,7 +41,7 @@ export async function listQuestions(f: ListFilters) {
       take: PAGE_SIZE,
       select: {
         id: true, stem: true, status: true, section: true, discipline: true, subtopic: true, difficulty: true, updatedAt: true,
-        _count: { select: { suggestions: { where: { status: "PENDING" } } } },
+        _count: { select: { suggestions: { where: { status: "PENDING" } }, reports: { where: { status: "OPEN" } } } },
       },
     }),
   ]);
@@ -100,6 +102,7 @@ export async function getQuestion(id: string) {
       createdBy: { select: { email: true } },
       reviewedBy: { select: { email: true } },
       suggestions: { orderBy: { createdAt: "desc" }, take: 5 },
+      _count: { select: { reports: { where: { status: "OPEN" } } } },
     },
   });
   if (!q) throw new ServiceError(404, "Question not found");

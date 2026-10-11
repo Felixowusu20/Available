@@ -15,6 +15,7 @@ Students take timed mocks, learn from explanations, and see their weak topics. A
 - **Mocks of 50, 100 or 200** questions: always half preclinical, half clinical, mixed, with 25 of each in every block of 50.
 - **Topic practice** by discipline and/or subtopic, **redo missed**, **bookmarks**.
 - "I am guessing" on every question; results report guesses separately.
+- **Report a problem** on any question, while practising or from the missed questions on the results page: pick what is wrong (typo, unclear, answer or explanation looks wrong, outdated, other) and add a note.
 - Progress is saved on the server and resumes on any device.
 - Results: score, preclinical/clinical split, per-block and per-topic breakdown (weakest first), missed questions with explanations. Dashboard: history, accuracy trend, weakest topics, seen vs remaining.
 - Mobile first, light and dark theme, no UI or chart library, keyboard shortcuts on desktop (A–D or 1–4 to answer, Enter for next, F flag, B bookmark, M map).
@@ -22,6 +23,7 @@ Students take timed mocks, learn from explanations, and see their weak topics. A
 **Admins**
 - Question list with search and filters; editor; bulk status changes.
 - Import from JSON or CSV with a row-by-row preview, duplicate and near-duplicate detection. Imports always start as drafts.
+- **Reports** – questions students have reported, most reported first, with the reasons and notes. Fix the question, then close its reports as fixed or as needing no change. The Reports link shows how many questions are waiting, and the question list can be filtered to those with open reports.
 - **AI review** – tagging and quality checks (see below). AI output is only ever a suggestion; nothing is applied or published without an admin accepting it.
 - Only `PUBLISHED` questions ever reach students.
 
@@ -144,4 +146,4 @@ Dockerfile, docker-compose*.yml
 
 ## Security in brief
 
-Secrets live only in environment variables (never sent to the browser; `.env` is git-ignored). Passwords are hashed with argon2id; verification and reset tokens are single-use, hashed and expire. Every admin page and API route checks the admin role against the database. Students can only read their own sessions, and questions are served per session: there is no endpoint that lists the bank. Login, sign-up, password-reset and AI endpoints are rate limited. Security headers (CSP, HSTS in production, frame and content-type protection) are set in `next.config.ts`. Logs are structured JSON on stdout and never contain secrets or students' answers.
+Secrets live only in environment variables (never sent to the browser; `.env` is git-ignored). Passwords are hashed with argon2id; verification and reset tokens are single-use, hashed and expire. Every admin page and API route checks the admin role against the database. Students can only read their own sessions, and questions are served per session: there is no endpoint that lists the bank. Login, sign-up, password-reset, question-report and AI endpoints are rate limited. Security headers (CSP, HSTS in production, frame and content-type protection) are set in `next.config.ts`. Logs are structured JSON on stdout and never contain secrets or students' answers.

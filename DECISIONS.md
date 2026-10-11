@@ -25,6 +25,14 @@ Choices made without asking, and why. Change them freely; each says where to loo
 - **Options are shuffled at import, and again per session** (`SessionQuestion.optionOrder`), so letter positions cannot be memorised. Answers are stored as the canonical option index.
 - **Duplicates:** a normalised copy of the stem (`stemNorm`) has a trigram index. `contentHash` (sha256 of the same text) makes seeding and imports idempotent. Near-duplicate threshold: 0.8 similarity.
 
+## Reports
+- **Students report through their session, not by question id** (`PUT /api/sessions/:id/questions/:pos/report`), so they can only report a question they were served, the browser never handles question ids, and results can be reported after a session has finished.
+- **One open report per student per question.** Sending another replaces the reason and note. A partial unique index (`WHERE status = 'OPEN'`, only in the migration SQL because Prisma cannot declare it) keeps this true when two requests arrive together. Once an admin closes a report the student can report the question again.
+- **Admins work per question, not per report.** The Reports page groups open reports by question (most reported first) and closes all of a question's open reports together as `RESOLVED` (fixed) or `DISMISSED` (no change needed), with an optional note. A report never changes a question's status by itself: nothing is unpublished automatically, so a few mistaken or malicious reports cannot take questions away from students.
+- **Students never see other students' reports or the outcome.** They only see whether they have an open report ("Reported"). Reporter emails are shown to admins only.
+- **"The answer looks wrong" and "the explanation is wrong" are only offered once the answer has been shown**, since before that (exam mode) the student cannot judge them. The server accepts any reason.
+- **Limits:** 30 reports per student per hour; notes up to 1000 characters (also a database CHECK); "Something else" needs a few words of explanation.
+
 ## Practice rules
 - **Mock composition:** half preclinical, half clinical; every block of 50 has 25 of each, shuffled together. Unseen questions are preferred; if a section is too small the mock is refused rather than shortened.
 - **Exam timer:** `EXAM_SECONDS_PER_QUESTION` (default 72, so 200 questions = 4 hours). The deadline is fixed at the start (no pause). The browser's countdown uses the server's clock, not the device's. A 15-second grace absorbs network delay on the last answer; an expired session is finalised the next time it is read.

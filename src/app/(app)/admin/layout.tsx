@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/guards";
+import { countReportedQuestions } from "@/lib/reports";
 
 // Second gate (the (app) layout already requires sign-in): every page below needs the ADMIN role.
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireAdmin();
+  const reported = await countReportedQuestions();
   return (
     <div>
       <nav className="border-b border-line bg-bg" aria-label="Admin">
@@ -19,6 +21,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           <Link href="/admin/ai" className="py-1 hover:underline">
             AI review
+          </Link>
+          <Link href="/admin/reports" className="py-1 hover:underline">
+            Reports{reported > 0 ? ` (${reported})` : ""}
           </Link>
         </div>
       </nav>

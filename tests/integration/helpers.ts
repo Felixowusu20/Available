@@ -43,7 +43,7 @@ export async function correctSlot(sessionId: string, position: number) {
 export async function resetDb() {
   if (!/_test\b/.test(process.env.DATABASE_URL ?? "")) throw new Error("resetDb refused: not the test database");
   await db.$executeRawUnsafe(
-    `TRUNCATE "AiSuggestion","AiRun","Answer","SessionQuestion","PracticeSession","Bookmark","Question","AuthToken","Account","RateLimit","User" RESTART IDENTITY CASCADE`,
+    `TRUNCATE "QuestionReport","AiSuggestion","AiRun","Answer","SessionQuestion","PracticeSession","Bookmark","Question","AuthToken","Account","RateLimit","User" RESTART IDENTITY CASCADE`,
   );
 }
 

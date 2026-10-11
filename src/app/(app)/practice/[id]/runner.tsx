@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ReportDialog } from "@/components/report-dialog";
 import type { Feedback, MapEntry, QuestionPayload, SessionState } from "@/lib/practice/service";
 
 const LETTERS = ["A", "B", "C", "D"];
@@ -37,7 +38,7 @@ export function Runner({
   const [qs, setQs] = useState<Record<number, QuestionPayload>>(() => Object.fromEntries(initialQuestions.map((q) => [q.position, q])));
   const [pos, setPos] = useState(startAt);
   const [showMap, setShowMap] = useState(false);
-  const [dialog, setDialog] = useState<null | "finish" | "switch">(null);
+  const [dialog, setDialog] = useState<null | "finish" | "switch" | "report">(null);
   const [save, setSave] = useState<SaveStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
@@ -471,6 +472,9 @@ export function Runner({
             <button className={`btn btn-ghost !min-h-10 !px-3 !py-1 text-sm ${q.bookmarked ? "!border-accent !text-accent" : ""}`} onClick={() => void toggleBookmark()} aria-pressed={q.bookmarked}>
               {q.bookmarked ? "Bookmarked" : "Bookmark"}
             </button>
+            <button className={`btn btn-ghost !min-h-10 !px-3 !py-1 text-sm ${q.reported ? "!border-accent !text-accent" : ""}`} onClick={() => setDialog("report")}>
+              {q.reported ? "Reported" : "Report a problem"}
+            </button>
           </div>
 
           {q.feedback && (
@@ -516,8 +520,12 @@ export function Runner({
         </div>
       </div>
 
+      {dialog === "report" && q && (
+        <ReportDialog sessionId={id} position={pos} revealed={revealed} alreadyReported={q.reported} onClose={() => setDialog(null)} onSent={() => patchQ(pos, { reported: true })} />
+      )}
+
       {/* Confirmation dialogs */}
-      {dialog && (
+      {(dialog === "finish" || dialog === "switch") && (
         <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/50 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
           <div className="card w-full max-w-md space-y-3 p-5">
             {dialog === "finish" ? (

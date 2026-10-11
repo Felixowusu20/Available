@@ -5,6 +5,7 @@ import { composeList, composeMock, randomOptionOrder, type Composed } from "@/li
 import { ServiceError } from "@/lib/practice/http";
 import type { CreateSessionInput } from "@/lib/practice/schemas";
 import { summarise, type ResultRow } from "@/lib/practice/scoring";
+import { openReportedIds } from "@/lib/reports";
 import { deadlineOf, isPastGrace, timeLimitSeconds } from "@/lib/practice/timing";
 
 type Session = NonNullable<Awaited<ReturnType<typeof findOwned>>>;
@@ -25,6 +26,8 @@ export type QuestionPayload = {
   guessed: boolean;
   flagged: boolean;
   bookmarked: boolean;
+  /** This student has an open report on the question. */
+  reported: boolean;
   timeSpentMs: number;
   feedback?: Feedback;
 };
@@ -213,7 +216,11 @@ export async function getQuestions(userId: string, id: string, from: number, cou
     orderBy: { position: "asc" },
     include: { question: true, answer: true },
   });
-  const marks = await db.bookmark.findMany({ where: { userId, questionId: { in: rows.map((r) => r.questionId) } }, select: { questionId: true } });
+  const ids = rows.map((r) => r.questionId);
+  const [marks, reported] = await Promise.all([
+    db.bookmark.findMany({ where: { userId, questionId: { in: ids } }, select: { questionId: true } }),
+    openReportedIds(userId, ids),
+  ]);
   const marked = new Set(marks.map((m) => m.questionId));
 
   return rows.map((r) => {
@@ -227,6 +234,7 @@ export async function getQuestions(userId: string, id: string, from: number, cou
       guessed: r.answer?.guessed ?? false,
       flagged: r.answer?.flagged ?? false,
       bookmarked: marked.has(r.questionId),
+      reported: reported.has(r.questionId),
       timeSpentMs: r.answer?.timeSpentMs ?? 0,
       feedback: isRevealed(s, answered) ? feedbackFor(r.optionOrder, r.question) : undefined,
     };
@@ -341,6 +349,7 @@ export type ResultQuestion = {
   explanation: string;
   guessed: boolean;
   flagged: boolean;
+  reported: boolean;
   timeSpentMs: number;
   section: "PRECLINICAL" | "CLINICAL";
   discipline: string;
@@ -356,6 +365,7 @@ export async function getResults(userId: string, id: string) {
     orderBy: { position: "asc" },
     include: { question: true, answer: true },
   });
+  const reported = await openReportedIds(userId, rows.map((r) => r.questionId));
   const questions: ResultQuestion[] = rows.map((r) => {
     const answered = r.answer?.selectedIndex != null;
     return {
@@ -368,6 +378,7 @@ export async function getResults(userId: string, id: string) {
       explanation: r.question.explanation,
       guessed: r.answer?.guessed ?? false,
       flagged: r.answer?.flagged ?? false,
+      reported: reported.has(r.questionId),
       timeSpentMs: r.answer?.timeSpentMs ?? 0,
       section: r.question.section ?? "PRECLINICAL",
       discipline: r.question.discipline ?? "Untagged",

@@ -47,6 +47,21 @@ enum AuthTokenType {
   RESET_PASSWORD
 }
 
+enum ReportReason {
+  WRONG_ANSWER
+  UNCLEAR
+  TYPO
+  OUTDATED
+  EXPLANATION
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
 enum AiRunKind {
   TAG
   QUALITY
@@ -81,6 +96,8 @@ model User {
   createdQuestion Question[]        @relation("QuestionCreatedBy")
   reviewed        Question[]        @relation("QuestionReviewedBy")
   aiRuns          AiRun[]
+  reports         QuestionReport[] @relation("ReportedBy")
+  resolvedReports QuestionReport[] @relation("ReportResolvedBy")
 }
 
 // Standard Auth.js account table. Unused until an OAuth provider (Google) is enabled.
@@ -157,6 +174,7 @@ model Question {
   sessionQuestions SessionQuestion[]
   bookmarks        Bookmark[]
   suggestions      AiSuggestion[]
+  reports          QuestionReport[]
 
   @@index([status, section, discipline, subtopic])
   @@index([stemNorm(ops: raw("gin_trgm_ops"))], type: Gin, map: "Question_stemNorm_trgm_idx")
@@ -299,4 +317,29 @@ model AiSuggestion {
 
   @@index([status, createdAt])
   @@index([questionId])
+}
+
+// A student's report that a question looks wrong. A student has at most one OPEN report per question
+// (a partial unique index in the migration enforces it); sending another updates it. Admins close all
+// open reports on a question together as RESOLVED (fixed) or DISMISSED (no change needed).
+model QuestionReport {
+  id             String       @id @default(cuid())
+  questionId     String
+  userId         String
+  reason         ReportReason
+  comment        String       @default("")
+  status         ReportStatus @default(OPEN)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  resolvedAt     DateTime?
+  resolvedById   String?
+  resolutionNote String       @default("")
+
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user       User     @relation("ReportedBy", fields: [userId], references: [id], onDelete: Cascade)
+  resolvedBy User?    @relation("ReportResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([questionId, status])
+  @@index([userId, questionId])
 }

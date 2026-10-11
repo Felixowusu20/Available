@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { statusCounts } from "@/lib/admin/questions";
+import { countReportedQuestions } from "@/lib/reports";
 import { aiEnabled } from "@/lib/env";
 import { db } from "@/lib/db";
 
 export const metadata = { title: "Admin" };
 
 export default async function AdminHome() {
-  const [counts, pendingSuggestions, users] = await Promise.all([
+  const [counts, pendingSuggestions, users, reported] = await Promise.all([
     statusCounts(),
     db.aiSuggestion.count({ where: { status: "PENDING" } }),
     db.user.count(),
+    countReportedQuestions(),
   ]);
   const tiles = [
     { label: "Published", value: counts.PUBLISHED, href: "/admin/questions?status=PUBLISHED" },
@@ -18,6 +20,7 @@ export default async function AdminHome() {
     { label: "Untagged", value: counts.untagged, href: "/admin/questions?untagged=1" },
     { label: "Retired", value: counts.RETIRED, href: "/admin/questions?status=RETIRED" },
     { label: "AI suggestions to review", value: pendingSuggestions, href: "/admin/ai" },
+    { label: "Questions reported by students", value: reported, href: "/admin/reports" },
   ];
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">

@@ -2,9 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { topicKey, type Availability, type Count } from "@/lib/practice/topic-counts";
 
 type Tree = { section: "PRECLINICAL" | "CLINICAL"; disciplines: { name: string; subtopics: string[] }[] }[];
 type Mode = "LEARN" | "EXAM";
+
+/** "50 left", "All done" or "No questions yet" for one topic. */
+function leftLabel(c: Count | undefined) {
+  if (!c || c.total === 0) return "No questions yet";
+  return c.left === 0 ? "All done" : `${c.left} left`;
+}
 
 function duration(totalSeconds: number) {
   const h = Math.floor(totalSeconds / 3600);
@@ -16,12 +23,15 @@ export function StartPractice({
   tree,
   secondsPerQuestion,
   available,
+  left,
   missedCount,
   bookmarkCount,
 }: {
   tree: Tree;
   secondsPerQuestion: number;
   available: { PRECLINICAL: number; CLINICAL: number };
+  /** Per topic: published questions and how many this student has not answered yet. */
+  left: Availability;
   missedCount: number;
   bookmarkCount: number;
 }) {
@@ -73,6 +83,12 @@ export function StartPractice({
   );
 
   const picked = disciplines.size + subtopics.size;
+  // Unanswered questions in the current selection (a whole discipline and its subtopics are never picked together).
+  const newInSelection =
+    [...disciplines].reduce((n, d) => n + (left.disciplines[d]?.left ?? 0), 0) + [...subtopics].reduce((n, k) => n + (left.subtopics[k]?.left ?? 0), 0);
+  /** Total and unanswered questions across a list of disciplines. */
+  const sumOf = (ds: Tree[number]["disciplines"]): Count =>
+    ds.reduce<Count>((acc, d) => ({ total: acc.total + (left.disciplines[d.name]?.total ?? 0), left: acc.left + (left.disciplines[d.name]?.left ?? 0) }), { total: 0, left: 0 });
   const mockOk = (size: number) => available.PRECLINICAL >= size / 2 && available.CLINICAL >= size / 2;
 
   return (
@@ -112,7 +128,10 @@ export function StartPractice({
         <div className="space-y-2">
           {tree.map(({ section, disciplines: ds }) => (
             <details key={section} className="rounded-lg border border-line">
-              <summary className="cursor-pointer select-none px-3 py-2 font-medium">{section === "PRECLINICAL" ? "Preclinical" : "Clinical"}</summary>
+              <summary className="flex cursor-pointer select-none items-center justify-between gap-2 px-3 py-2 font-medium">
+                <span>{section === "PRECLINICAL" ? "Preclinical" : "Clinical"}</span>
+                <span className="text-sm font-normal text-muted">{leftLabel(sumOf(ds))}</span>
+              </summary>
               <div className="space-y-2 px-3 pb-3">
                 {ds.map((d) => (
                   <details key={d.name} className="rounded border border-line/60">
@@ -126,6 +145,7 @@ export function StartPractice({
                         className="size-5"
                       />
                       <span>{d.name}</span>
+                      <span className="ml-auto text-sm text-muted">{leftLabel(left.disciplines[d.name])}</span>
                     </summary>
                     {d.subtopics.length > 1 && (
                       <ul className="grid gap-1 px-2 pb-2 pl-9 sm:grid-cols-2">
@@ -141,7 +161,8 @@ export function StartPractice({
                                   onChange={() => toggle(subtopics, setSubtopics, key)}
                                   className="size-4"
                                 />
-                                {s}
+                                <span>{s}</span>
+                                <span className="ml-auto text-xs text-muted">{leftLabel(left.subtopics[topicKey(d.name, s)])}</span>
                               </label>
                             </li>
                           );
@@ -186,6 +207,12 @@ export function StartPractice({
         >
           {busy === "topic" ? "Starting…" : picked === 0 ? "Choose at least one topic" : `Start ${topicCount} questions`}
         </button>
+        {picked > 0 && (
+          <p className="text-sm text-muted" aria-live="polite">
+            {newInSelection} question{newInSelection === 1 ? "" : "s"} you have not answered yet in your selection.
+            {newInSelection < topicCount && " Beyond that, questions you have already answered come round again."}
+          </p>
+        )}
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">

@@ -14,6 +14,7 @@ Students take timed mocks, learn from explanations, and see their weak topics. A
 - **Switch exam → learn** at any point without losing answers.
 - **Mocks of 50, 100 or 200** questions: always half preclinical, half clinical, mixed, with 25 of each in every block of 50.
 - **Topic practice** by discipline and/or subtopic, **redo missed**, **bookmarks**.
+- **Questions left** shown next to every section, discipline and subtopic on the practice screen ("50 left", "All done"); the number drops as you answer, and the screen tells you how many unanswered questions your selection holds.
 - "I am guessing" on every question; results report guesses separately.
 - **Report a problem** on any question, while practising or from the missed questions on the results page: pick what is wrong (typo, unclear, answer or explanation looks wrong, outdated, other) and add a note.
 - Progress is saved on the server and resumes on any device.

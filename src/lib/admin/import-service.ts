@@ -92,6 +92,7 @@ export async function commitRows(adminId: string, rows: ParsedRow[], opts: { ski
       difficulty: q.difficulty ?? null,
       source: q.source ?? opts.defaultSource,
       status: "DRAFT" as const,
+      highPriority: q.highPriority,
       createdById: adminId,
       ...derivedFields(q),
     };

@@ -46,6 +46,16 @@ describe("normaliseRow", () => {
     expect(half.input?.subtopic ?? null).toBeNull();
   });
 
+  it("reads an optional priority column and defaults to normal", () => {
+    expect(normaliseRow(good, 1).input?.highPriority).toBe(false);
+    for (const v of ["high", "High", "yes", "TRUE", "1", true, "High priority"]) expect(normaliseRow({ ...good, priority: v }, 1).input?.highPriority).toBe(true);
+    for (const v of ["normal", "no", "false", "0", false]) expect(normaliseRow({ ...good, highPriority: v }, 1).input?.highPriority).toBe(false);
+    const odd = normaliseRow({ ...good, priority: "urgent!!" }, 1);
+    expect(odd.errors).toEqual([]);
+    expect(odd.input?.highPriority).toBe(false);
+    expect(odd.warnings.join(" ")).toMatch(/Priority "urgent!!" ignored/);
+  });
+
   it("reports clear errors", () => {
     expect(normaliseRow({ options: good.options, correct: "A" }, 1).errors.join()).toMatch(/Missing question text/);
     expect(normaliseRow({ stem: "x", options: ["a", "b", "c"], correct: "A" }, 1).errors.join()).toMatch(/exactly 4/);

@@ -12,6 +12,7 @@ type Item = {
   section: string | null;
   discipline: string | null;
   subtopic: string | null;
+  highPriority: boolean;
   pendingAi: number;
   openReports: number;
 };
@@ -38,14 +39,15 @@ export function QuestionTable({ items }: { items: Item[] }) {
       return n;
     });
 
-  async function bulk(status: string) {
+  /** One bulk request: either { status } (move to a status) or { highPriority } (set or clear the flag). */
+  async function bulk(change: { status: string } | { highPriority: boolean }) {
     setBusy(true);
     setMsg(null);
     try {
       const res = await fetch("/api/admin/questions/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: [...selected], status }),
+        body: JSON.stringify({ ids: [...selected], ...change }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.issues?.[0]?.message ?? data?.error ?? "Failed");
@@ -74,17 +76,24 @@ export function QuestionTable({ items }: { items: Item[] }) {
       {selected.size > 0 && (
         <div className="card sticky top-2 z-10 flex flex-wrap items-center gap-2 p-3 text-sm" role="region" aria-label="Bulk actions">
           <strong>{selected.size} selected</strong>
-          <button className="btn btn-ghost !min-h-9 !px-3 !py-1" disabled={busy} onClick={() => bulk("IN_REVIEW")}>
+          <button className="btn btn-ghost !min-h-9 !px-3 !py-1" disabled={busy} onClick={() => bulk({ status: "IN_REVIEW" })}>
             Send to review
           </button>
-          <button className="btn !min-h-9 !px-3 !py-1" disabled={busy} onClick={() => bulk("PUBLISHED")}>
+          <button className="btn !min-h-9 !px-3 !py-1" disabled={busy} onClick={() => bulk({ status: "PUBLISHED" })}>
             Publish
           </button>
-          <button className="btn btn-ghost !min-h-9 !px-3 !py-1" disabled={busy} onClick={() => bulk("RETIRED")}>
+          <button className="btn btn-ghost !min-h-9 !px-3 !py-1" disabled={busy} onClick={() => bulk({ status: "RETIRED" })}>
             Retire
           </button>
-          <button className="btn btn-ghost !min-h-9 !px-3 !py-1" disabled={busy} onClick={() => bulk("DRAFT")}>
+          <button className="btn btn-ghost !min-h-9 !px-3 !py-1" disabled={busy} onClick={() => bulk({ status: "DRAFT" })}>
             Back to draft
+          </button>
+          <span className="mx-1 text-muted">|</span>
+          <button className="btn btn-ghost !min-h-9 !px-3 !py-1" disabled={busy} onClick={() => bulk({ highPriority: true })}>
+            Mark high priority
+          </button>
+          <button className="btn btn-ghost !min-h-9 !px-3 !py-1" disabled={busy} onClick={() => bulk({ highPriority: false })}>
+            Remove priority
           </button>
           <span className="mx-1 text-muted">|</span>
           <button className="btn btn-ghost !min-h-9 !px-3 !py-1" disabled={busy} onClick={() => runAi("tag")}>
@@ -122,6 +131,7 @@ export function QuestionTable({ items }: { items: Item[] }) {
                   ) : (
                     <span className="text-warn">untagged</span>
                   )}
+                  {q.highPriority && <span className="rounded bg-accent/15 px-1.5 py-0.5 font-medium text-accent">high priority</span>}
                   {q.pendingAi > 0 && <span className="text-accent">{q.pendingAi} AI suggestion{q.pendingAi === 1 ? "" : "s"}</span>}
                   {q.openReports > 0 && <span className="font-medium text-warn">{q.openReports} open report{q.openReports === 1 ? "" : "s"}</span>}
                 </p>

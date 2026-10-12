@@ -151,6 +151,9 @@ model Question {
   difficulty  Difficulty?
   source      String?
   status      QuestionStatus @default(DRAFT)
+  // Set by an admin. In mocks and topic practice, questions a student has not seen yet are
+  // drawn high-priority first (see src/lib/practice/compose.ts). Never shown to students.
+  highPriority Boolean       @default(false)
 
   // Normalised stem text used for pg_trgm duplicate detection.
   stemNorm    String
@@ -177,6 +180,7 @@ model Question {
   reports          QuestionReport[]
 
   @@index([status, section, discipline, subtopic])
+  @@index([status, highPriority])
   @@index([stemNorm(ops: raw("gin_trgm_ops"))], type: Gin, map: "Question_stemNorm_trgm_idx")
 }
 

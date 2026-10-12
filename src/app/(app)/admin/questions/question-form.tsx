@@ -16,6 +16,7 @@ export type QuestionFormValues = {
   difficulty: "" | "EASY" | "MEDIUM" | "HARD";
   source: string;
   status: "DRAFT" | "IN_REVIEW" | "PUBLISHED" | "RETIRED";
+  highPriority: boolean;
 };
 
 export const emptyQuestion: QuestionFormValues = {
@@ -29,6 +30,7 @@ export const emptyQuestion: QuestionFormValues = {
   difficulty: "",
   source: "",
   status: "DRAFT",
+  highPriority: false,
 };
 
 export function QuestionForm({ initial, tree }: { initial: QuestionFormValues; tree: Tree }) {
@@ -60,6 +62,7 @@ export function QuestionForm({ initial, tree }: { initial: QuestionFormValues; t
       difficulty: v.difficulty || null,
       source: v.source || null,
       status: v.status,
+      highPriority: v.highPriority,
     };
     try {
       const res = await fetch(v.id ? `/api/admin/questions/${v.id}` : "/api/admin/questions", {
@@ -175,6 +178,14 @@ export function QuestionForm({ initial, tree }: { initial: QuestionFormValues; t
           </select>
         </label>
       </div>
+
+      <label className="flex items-start gap-3 rounded-lg bg-card p-3 text-sm ring-1 ring-line">
+        <input type="checkbox" className="mt-0.5 size-5 shrink-0" checked={v.highPriority} onChange={(e) => set("highPriority", e.target.checked)} />
+        <span>
+          <span className="block font-medium">High priority</span>
+          <span className="text-muted">Students are shown this question before other questions they have not seen yet, in mocks and topic practice. Students cannot see the flag.</span>
+        </span>
+      </label>
 
       {errors.length > 0 && (
         <ul role="alert" className="list-disc space-y-1 rounded-lg bg-bad-bg p-3 pl-7 text-sm text-bad">

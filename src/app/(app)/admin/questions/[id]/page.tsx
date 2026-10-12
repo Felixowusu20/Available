@@ -30,6 +30,7 @@ export default async function EditQuestionPage({ params }: { params: Promise<{ i
     difficulty: q.difficulty ?? "",
     source: q.source ?? "",
     status: q.status,
+    highPriority: q.highPriority,
   };
 
   const pending = q.suggestions.filter((s) => s.status === "PENDING");

@@ -4,6 +4,8 @@ A web platform for Ghanaian medical students preparing for the **Medical and Den
 
 Students take timed mocks, learn from explanations, and see their weak topics. Admins grow the question bank with AI-assisted tagging and review.
 
+**Deploying the latest release (three new features, two database migrations): start with [HANDOVER.md](HANDOVER.md).**
+
 **Documents:** [DEPLOYMENT.md](DEPLOYMENT.md) (hosting, backups, HTTPS, troubleshooting) · [DECISIONS.md](DECISIONS.md) (choices made and why)
 
 ## What it does

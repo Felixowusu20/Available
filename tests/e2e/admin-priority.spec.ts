@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { closeDb, createUser, logIn } from "./support";
+import { createUser, logIn } from "./support";
 
-test.afterAll(closeDb);
+// The shared database connection in ./support is used by every spec file in this worker, so it is not
+// closed here; it goes away when the worker exits.
 
 test.describe("high-priority questions (admin)", () => {
   test("mark one question from its edit page, find it with the filter, then clear it in bulk", async ({ page }) => {

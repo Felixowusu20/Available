@@ -20,10 +20,12 @@ export const createSessionSchema = z.discriminatedUnion("kind", [
         .max(30)
         .default([]),
       subtopics: z.array(topicPair).max(100).default([]),
+      // A whole section ("practise 50 preclinical questions"): every discipline in it.
+      sections: z.array(z.enum(["PRECLINICAL", "CLINICAL"])).max(2).optional(),
       count: z.number().int().min(5).max(200),
       mode,
     })
-    .refine((t) => t.disciplines.length + t.subtopics.length > 0, "Choose at least one discipline or subtopic"),
+    .refine((t) => t.disciplines.length + t.subtopics.length + (t.sections?.length ?? 0) > 0, "Choose a section, a discipline or a subtopic"),
   z.object({ kind: z.literal("REDO_MISSED"), count: z.number().int().min(5).max(200).default(50), mode }),
   z.object({ kind: z.literal("BOOKMARKS"), mode }),
 ]);

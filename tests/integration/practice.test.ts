@@ -311,3 +311,45 @@ describe("students only see their own data", () => {
     await expect(createSession(b.id, { kind: "REDO_MISSED", count: 10, mode: "LEARN" })).rejects.toMatchObject({ status: 422 });
   });
 });
+
+describe("practising one section", () => {
+  const section = (userId: string, sections: ("PRECLINICAL" | "CLINICAL")[], count = 50, mode: "LEARN" | "EXAM" = "LEARN") =>
+    createSession(userId, { kind: "TOPIC", disciplines: [], subtopics: [], sections, count, mode });
+
+  it("gives exactly the number asked, all from the chosen section, whichever it is", async () => {
+    await seedBank({ pre: 80, cli: 80 });
+    const u = await makeStudent();
+    const pre = await section(u.id, ["PRECLINICAL"]);
+    expect(await sectionCounts(pre)).toMatchObject({ total: 50, pre: 50, cli: 0, nonPublished: 0 });
+    const cli = await section(u.id, ["CLINICAL"], 30);
+    expect(await sectionCounts(cli)).toMatchObject({ total: 30, pre: 0, cli: 30, nonPublished: 0 });
+    expect((await db.practiceSession.findUniqueOrThrow({ where: { id: pre } })).filter).toMatchObject({ sections: ["PRECLINICAL"] });
+  });
+
+  it("prefers questions not yet answered, so a second 50 is a fresh 50", async () => {
+    await seedBank({ pre: 120, cli: 20 });
+    const u = await makeStudent();
+    const first = await section(u.id, ["PRECLINICAL"]);
+    for (let p = 0; p < 50; p++) await saveAnswer(u.id, first, p, answer(await correctSlot(first, p)));
+    const seen = new Set((await db.sessionQuestion.findMany({ where: { sessionId: first } })).map((r) => r.questionId));
+    const second = await section(u.id, ["PRECLINICAL"]);
+    const overlap = (await db.sessionQuestion.findMany({ where: { sessionId: second } })).filter((r) => seen.has(r.questionId)).length;
+    expect(overlap).toBe(0); // 120 published, 50 answered: plenty of fresh ones
+  });
+
+  it("gives what exists when the section has fewer questions than asked, and refuses when it has none", async () => {
+    await seedBank({ pre: 12, cli: 0 });
+    const u = await makeStudent();
+    const id = await section(u.id, ["PRECLINICAL"], 50);
+    expect((await sectionCounts(id)).total).toBe(12);
+    await expect(section(u.id, ["CLINICAL"])).rejects.toMatchObject({ status: 422 });
+  });
+
+  it("works as a timed exam too, with time for the number of questions", async () => {
+    await seedBank({ pre: 60, cli: 60 });
+    const u = await makeStudent();
+    const id = await section(u.id, ["PRECLINICAL"], 50, "EXAM");
+    const s = await db.practiceSession.findUniqueOrThrow({ where: { id } });
+    expect(s).toMatchObject({ mode: "EXAM", questionCount: 50, timeLimitSeconds: 50 * 72 });
+  });
+});

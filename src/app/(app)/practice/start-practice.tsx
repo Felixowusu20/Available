@@ -44,6 +44,9 @@ export function StartPractice({
   const [topicCount, setTopicCount] = useState(20);
   const [disciplines, setDisciplines] = useState<Set<string>>(new Set());
   const [subtopics, setSubtopics] = useState<Set<string>>(new Set()); // "Discipline|Subtopic"
+  const [section, setSection] = useState<"PRECLINICAL" | "CLINICAL">("PRECLINICAL");
+  const [sectionCount, setSectionCount] = useState(50);
+  const [sectionMode, setSectionMode] = useState<Mode>("LEARN");
 
   async function start(label: string, body: unknown) {
     setBusy(label);
@@ -89,6 +92,9 @@ export function StartPractice({
   /** Total and unanswered questions across a list of disciplines. */
   const sumOf = (ds: Tree[number]["disciplines"]): Count =>
     ds.reduce<Count>((acc, d) => ({ total: acc.total + (left.disciplines[d.name]?.total ?? 0), left: acc.left + (left.disciplines[d.name]?.left ?? 0) }), { total: 0, left: 0 });
+  const sectionDisciplines = tree.find((t) => t.section === section)?.disciplines ?? [];
+  const sectionTotals = sumOf(sectionDisciplines);
+  const sectionName = section === "PRECLINICAL" ? "preclinical" : "clinical";
   const mockOk = (size: number) => available.PRECLINICAL >= size / 2 && available.CLINICAL >= size / 2;
 
   return (
@@ -119,6 +125,65 @@ export function StartPractice({
             </button>
           ))}
         </div>
+      </section>
+
+      <section className="card space-y-3 p-4" aria-labelledby="section-h">
+        <h2 id="section-h" className="text-lg font-semibold">
+          Practise one section
+        </h2>
+        <p className="text-sm text-muted">Only preclinical or only clinical questions, for example 50 preclinical.</p>
+        <fieldset className="grid grid-cols-2 gap-2">
+          <legend className="sr-only">Section</legend>
+          {tree.map((t) => {
+            const totals = sumOf(t.disciplines);
+            return (
+              <label key={t.section} className={`flex min-h-12 cursor-pointer flex-col justify-center rounded-lg border p-3 ${section === t.section ? "border-accent bg-accent/10" : "border-line"}`}>
+                <span className="flex items-center gap-2 font-medium">
+                  <input type="radio" name="section" checked={section === t.section} onChange={() => setSection(t.section)} />
+                  {t.section === "PRECLINICAL" ? "Preclinical" : "Clinical"}
+                </span>
+                <span className="pl-6 text-xs text-muted">{leftLabel(totals)}</span>
+              </label>
+            );
+          })}
+        </fieldset>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="text-sm">
+            <span className="mb-1 block font-medium">Questions</span>
+            <div className="flex flex-wrap items-center gap-2">
+              {[20, 50, 100].map((n) => (
+                <button key={n} type="button" className={`btn !min-h-10 !px-3 !py-1 ${sectionCount === n ? "" : "btn-ghost"}`} aria-pressed={sectionCount === n} onClick={() => setSectionCount(n)}>
+                  {n}
+                </button>
+              ))}
+              <input
+                type="number"
+                min={5}
+                max={200}
+                value={sectionCount}
+                onChange={(e) => setSectionCount(Math.min(200, Math.max(5, Number(e.target.value) || 5)))}
+                className="input !w-24"
+                aria-label="Number of questions"
+              />
+            </div>
+          </div>
+          {modeChoice(sectionMode, setSectionMode, "sectionmode")}
+        </div>
+        <button
+          className="btn w-full sm:w-auto"
+          disabled={busy !== null || sectionTotals.total === 0}
+          onClick={() => start("section", { kind: "TOPIC", sections: [section], count: sectionCount, mode: sectionMode })}
+        >
+          {busy === "section" ? "Starting…" : `Start ${sectionCount} ${sectionName} questions`}
+        </button>
+        {sectionTotals.total > 0 && (
+          <p className="text-sm text-muted" aria-live="polite">
+            {sectionTotals.left} {sectionName} question{sectionTotals.left === 1 ? "" : "s"} you have not answered yet.
+            {sectionTotals.left < sectionCount && sectionTotals.total >= sectionCount && " Beyond that, questions you have already answered come round again."}
+            {sectionTotals.total < sectionCount && ` Only ${sectionTotals.total} ${sectionName} questions are published, so you will get ${sectionTotals.total}.`}
+            {sectionMode === "EXAM" && ` Timed: ${duration(Math.min(sectionCount, sectionTotals.total) * secondsPerQuestion)}.`}
+          </p>
+        )}
       </section>
 
       <section className="card space-y-3 p-4" aria-labelledby="topic-h">

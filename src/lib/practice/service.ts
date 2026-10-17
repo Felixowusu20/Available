@@ -136,14 +136,16 @@ export async function createSession(userId: string, input: CreateSessionInput): 
     const pool = rows.flatMap((r) => (r.section ? [{ id: r.id, section: r.section, highPriority: r.highPriority }] : []));
     composed = composeMock(pool, input.size, seen);
   } else if (input.kind === "TOPIC") {
+    const sections = input.sections ?? [];
     const or: Prisma.QuestionWhereInput[] = [
+      ...(sections.length ? [{ section: { in: sections } }] : []),
       ...(input.disciplines.length ? [{ discipline: { in: input.disciplines } }] : []),
       ...input.subtopics.map((s) => ({ discipline: s.discipline, subtopic: s.subtopic })),
     ];
     const pool = await db.question.findMany({ where: { status: "PUBLISHED", OR: or }, select: { id: true, highPriority: true } });
     if (pool.length === 0) throw new ServiceError(422, "No published questions match that selection yet.");
     composed = composeList(pool, input.count, seen);
-    filter = { disciplines: input.disciplines, subtopics: input.subtopics };
+    filter = { sections, disciplines: input.disciplines, subtopics: input.subtopics };
   } else if (input.kind === "REDO_MISSED") {
     const ids = await missedQuestionIds(userId);
     if (ids.length === 0) throw new ServiceError(422, "You have no missed questions to redo yet.");

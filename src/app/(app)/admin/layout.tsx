@@ -25,6 +25,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/reports" className="py-1 hover:underline">
             Reports{reported > 0 ? ` (${reported})` : ""}
           </Link>
+          <Link href="/admin/premium" className="py-1 hover:underline">
+            Premium
+          </Link>
         </div>
       </nav>
       {children}

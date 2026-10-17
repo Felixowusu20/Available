@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { hasPremium, withPriorityFor } from "@/lib/premium/access";
 import { env } from "@/lib/env";
 import { composeList, composeMock, randomOptionOrder, type Composed } from "@/lib/practice/compose";
 import { ServiceError } from "@/lib/practice/http";
@@ -128,15 +129,17 @@ async function missedQuestionIds(userId: string): Promise<string[]> {
 
 export async function createSession(userId: string, input: CreateSessionInput): Promise<string> {
   const seen = await seenQuestionIds(userId);
+  const premium = await hasPremium(userId);
   let composed: Composed[];
   let filter: Prisma.InputJsonValue | undefined;
 
   if (input.kind === "MOCK") {
     const rows = await db.question.findMany({ where: { status: "PUBLISHED", section: { not: null } }, select: { id: true, section: true, highPriority: true } });
     const pool = rows.flatMap((r) => (r.section ? [{ id: r.id, section: r.section, highPriority: r.highPriority }] : []));
-    composed = composeMock(pool, input.size, seen);
+    composed = composeMock(withPriorityFor(pool, premium), input.size, seen);
   } else if (input.kind === "TOPIC") {
     const sections = input.sections ?? [];
+    if (sections.length > 0 && !premium) throw new ServiceError(402, "Practising one section is a premium feature. Unlock premium for GHS 10 to use it.");
     const or: Prisma.QuestionWhereInput[] = [
       ...(sections.length ? [{ section: { in: sections } }] : []),
       ...(input.disciplines.length ? [{ discipline: { in: input.disciplines } }] : []),
@@ -144,7 +147,7 @@ export async function createSession(userId: string, input: CreateSessionInput): 
     ];
     const pool = await db.question.findMany({ where: { status: "PUBLISHED", OR: or }, select: { id: true, highPriority: true } });
     if (pool.length === 0) throw new ServiceError(422, "No published questions match that selection yet.");
-    composed = composeList(pool, input.count, seen);
+    composed = composeList(withPriorityFor(pool, premium), input.count, seen);
     filter = { sections, disciplines: input.disciplines, subtopics: input.subtopics };
   } else if (input.kind === "REDO_MISSED") {
     const ids = await missedQuestionIds(userId);

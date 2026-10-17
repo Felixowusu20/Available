@@ -60,7 +60,7 @@ test.describe("practice", () => {
   test("learn mode: answer with the keyboard, see the explanation, finish and read the results", async ({ page }) => {
     await logIn(page, await createUser());
     await page.goto("/practice");
-    await page.getByText("Preclinical", { exact: true }).click(); // open the section
+    await page.locator("summary").filter({ hasText: /^Preclinical/ }).click(); // open the section
     await page.getByLabel("All of Anatomy").check();
     await page.getByLabel("Questions", { exact: true }).fill("5");
     await page.getByRole("button", { name: /Start 5 questions/ }).click();
@@ -87,7 +87,7 @@ test.describe("practice", () => {
     const student = await createUser();
     await logIn(page, student);
     await page.goto("/practice");
-    await page.getByText("Preclinical", { exact: true }).click();
+    await page.locator("summary").filter({ hasText: /^Preclinical/ }).click();
     await page.getByLabel("All of Anatomy").check();
     await page.getByLabel("Questions", { exact: true }).fill("5");
     await page.getByRole("button", { name: /Start 5 questions/ }).click();
@@ -140,7 +140,7 @@ test.describe("practice", () => {
   test("the practice screen shows how many questions are left in each topic and the number drops as you answer", async ({ page }) => {
     await logIn(page, await createUser());
     await page.goto("/practice");
-    await page.getByText("Preclinical", { exact: true }).click();
+    await page.locator("summary").filter({ hasText: /^Preclinical/ }).click();
     const anatomy = page.locator("summary").filter({ hasText: "Anatomy" });
     const physiology = page.locator("summary").filter({ hasText: "Physiology" });
     await expect(anatomy).toContainText("30 left");
@@ -160,7 +160,7 @@ test.describe("practice", () => {
     await finishFromRunner(page);
 
     await page.goto("/practice");
-    await page.getByText("Preclinical", { exact: true }).click();
+    await page.locator("summary").filter({ hasText: /^Preclinical/ }).click();
     await expect(anatomy).toContainText("25 left"); // 5 answered
     await expect(physiology).toContainText("30 left"); // untouched
     await expect(page.locator("summary").filter({ hasText: "Preclinical" })).toContainText("55 left");
@@ -169,7 +169,7 @@ test.describe("practice", () => {
   test("a learn-mode answer cannot be changed once given", async ({ page }) => {
     await logIn(page, await createUser());
     await page.goto("/practice");
-    await page.getByText("Preclinical", { exact: true }).click();
+    await page.locator("summary").filter({ hasText: /^Preclinical/ }).click();
     await page.getByLabel("All of Physiology").check();
     await page.getByRole("button", { name: /Start 20 questions/ }).click();
     await runnerReady(page);
@@ -226,7 +226,7 @@ test.describe("practice", () => {
   test("the dashboard shows finished sessions and what is left to see", async ({ page }) => {
     await logIn(page, await createUser());
     await page.goto("/practice");
-    await page.getByText("Clinical", { exact: true }).click();
+    await page.locator("summary").filter({ hasText: /^Clinical/ }).click();
     await page.getByLabel("All of Surgery").check();
     await page.getByRole("button", { name: /Start 20 questions/ }).click();
     await runnerReady(page);

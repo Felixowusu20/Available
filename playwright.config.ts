@@ -38,6 +38,9 @@ export default defineConfig({
       APP_URL: BASE_URL,
       REQUIRE_EMAIL_VERIFICATION: "true",
       EXAM_SECONDS_PER_QUESTION: "72",
+      // A made-up test key: the Premium page switches on and the tests can sign webhooks. It never talks to Paystack.
+      PAYSTACK_SECRET_KEY: "sk_test_e2e_secret_0123456789",
+      PREMIUM_PRICE_PESEWAS: "1000",
       ANTHROPIC_API_KEY: "",
       LOG_LEVEL: "warn",
     },

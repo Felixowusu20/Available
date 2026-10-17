@@ -43,7 +43,7 @@ export async function correctSlot(sessionId: string, position: number) {
 export async function resetDb() {
   if (!/_test\b/.test(process.env.DATABASE_URL ?? "")) throw new Error("resetDb refused: not the test database");
   await db.$executeRawUnsafe(
-    `TRUNCATE "QuestionReport","AiSuggestion","AiRun","Answer","SessionQuestion","PracticeSession","Bookmark","Question","AuthToken","Account","RateLimit","User" RESTART IDENTITY CASCADE`,
+    `TRUNCATE "QuestionReport","AiSuggestion","AiRun","Answer","SessionQuestion","PracticeSession","Bookmark","Question","AuthToken","Account","RateLimit","Payment","User" RESTART IDENTITY CASCADE`,
   );
 }
 
@@ -51,8 +51,14 @@ export async function makeAdmin(email = "admin@test.local") {
   return db.user.create({ data: { email, name: "Admin", role: "ADMIN", passwordHash: "x", emailVerified: new Date() } });
 }
 
-export async function makeStudent(email = "student@test.local") {
-  return db.user.create({ data: { email, name: "Student", role: "STUDENT", passwordHash: "x", emailVerified: new Date() } });
+/**
+ * A student. Premium by default, so tests about practice are not about payment; pass `{ premium: false }` for a free account.
+ */
+export async function makeStudent(email = "student@test.local", opts: { premium?: boolean } = {}) {
+  const premium = opts.premium !== false;
+  return db.user.create({
+    data: { email, name: "Student", role: "STUDENT", passwordHash: "x", emailVerified: new Date(), ...(premium && { premiumAt: new Date(), premiumSource: "ADMIN" }) },
+  });
 }
 
 let counter = 0;

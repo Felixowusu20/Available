@@ -24,6 +24,8 @@ export default defineConfig({
       AI_TAGGING_MODEL: "claude-haiku-5-5",
       AI_QUALITY_MODEL: "claude-sonnet-5-5",
       AI_QUALITY_EFFORT: "medium",
+      PAYSTACK_SECRET_KEY: "sk_test_integration_secret_0123456789",
+      PREMIUM_PRICE_PESEWAS: "1000",
       LOG_LEVEL: "silent",
     },
   },

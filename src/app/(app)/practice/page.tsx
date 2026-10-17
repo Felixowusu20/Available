@@ -18,7 +18,8 @@ export default async function PracticePage() {
       orderBy: { answeredAt: "desc" },
       select: { questionId: true, correct: true },
     }),
-    getAvailability(user.id),
+    // The "questions left" counters are premium, so a free account is not even sent the numbers.
+    user.premium ? getAvailability(user.id) : Promise.resolve({ disciplines: {}, subtopics: {} }),
   ]);
   const available = { PRECLINICAL: 0, CLINICAL: 0 };
   for (const c of counts) if (c.section) available[c.section] = c._count;
@@ -40,6 +41,7 @@ export default async function PracticePage() {
         secondsPerQuestion={env().EXAM_SECONDS_PER_QUESTION}
         available={available}
         left={left}
+        premium={user.premium}
         missedCount={missedCount}
         bookmarkCount={bookmarkCount}
       />

@@ -87,6 +87,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   lastLoginAt   DateTime?
+  // One-time premium unlock (GHS 10): section practice, "questions left" counters and priority-first questions.
+  // Set only by a confirmed Paystack payment or by an admin. Null means a free account.
+  premiumAt     DateTime?
+  premiumSource String? // PAYMENT or ADMIN
 
   accounts        Account[]
   authTokens      AuthToken[]
@@ -96,8 +100,9 @@ model User {
   createdQuestion Question[]        @relation("QuestionCreatedBy")
   reviewed        Question[]        @relation("QuestionReviewedBy")
   aiRuns          AiRun[]
-  reports         QuestionReport[] @relation("ReportedBy")
-  resolvedReports QuestionReport[] @relation("ReportResolvedBy")
+  reports         QuestionReport[]  @relation("ReportedBy")
+  resolvedReports QuestionReport[]  @relation("ReportResolvedBy")
+  payments        Payment[]
 }
 
 // Standard Auth.js account table. Unused until an OAuth provider (Google) is enabled.
@@ -137,39 +142,39 @@ model AuthToken {
 }
 
 model Question {
-  id          String         @id @default(cuid())
-  stem        String
-  options     String[] // exactly 4, enforced by a CHECK constraint and by Zod
+  id           String         @id @default(cuid())
+  stem         String
+  options      String[] // exactly 4, enforced by a CHECK constraint and by Zod
   correctIndex Int
-  explanation String         @default("")
+  explanation  String         @default("")
   // Null only while a question is untagged (fresh import). A CHECK constraint requires all
   // three for IN_REVIEW and PUBLISHED questions.
-  section     Section?
+  section      Section?
   // Validated against taxonomy.json on every write (not a DB enum, so the taxonomy is editable).
-  discipline  String?
-  subtopic    String?
-  difficulty  Difficulty?
-  source      String?
-  status      QuestionStatus @default(DRAFT)
+  discipline   String?
+  subtopic     String?
+  difficulty   Difficulty?
+  source       String?
+  status       QuestionStatus @default(DRAFT)
   // Set by an admin. In mocks and topic practice, questions a student has not seen yet are
   // drawn high-priority first (see src/lib/practice/compose.ts). Never shown to students.
-  highPriority Boolean       @default(false)
+  highPriority Boolean        @default(false)
 
   // Normalised stem text used for pg_trgm duplicate detection.
   stemNorm    String
   // sha256 of normalised stem; makes seeding/imports idempotent.
-  contentHash String         @unique
+  contentHash String  @unique
   // Original topic label from the legacy seed file, if any.
   legacyTopic String?
 
   // Latest AI metadata that an admin applied: { tags, confidence, flags, model, runId }.
-  aiMeta      Json?
+  aiMeta Json?
 
   createdById  String?
   reviewedById String?
   publishedAt  DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   createdBy  User? @relation("QuestionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   reviewedBy User? @relation("QuestionReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
@@ -199,10 +204,10 @@ model PracticeSession {
   filter           Json?
 
   // Cached at finish so the dashboard (and any future leaderboard) stays cheap.
-  correctCount     Int?
-  answeredCount    Int?
-  guessedCount     Int?
-  correctGuessed   Int?
+  correctCount   Int?
+  answeredCount  Int?
+  guessedCount   Int?
+  correctGuessed Int?
 
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   questions SessionQuestion[]
@@ -213,11 +218,11 @@ model PracticeSession {
 }
 
 model SessionQuestion {
-  id         String @id @default(cuid())
-  sessionId  String
-  position   Int // 0-based order within the session
-  blockIndex Int // position / 50, for per-block breakdowns
-  questionId String
+  id          String @id @default(cuid())
+  sessionId   String
+  position    Int // 0-based order within the session
+  blockIndex  Int // position / 50, for per-block breakdowns
+  questionId  String
   // Display order: optionOrder[i] is the canonical option index shown at slot i.
   optionOrder Int[]
 
@@ -230,19 +235,19 @@ model SessionQuestion {
 }
 
 model Answer {
-  id                String   @id @default(cuid())
-  sessionQuestionId String   @unique
+  id                String    @id @default(cuid())
+  sessionQuestionId String    @unique
   sessionId         String
   userId            String
   questionId        String
   // Canonical option index (not display slot). Null when only flagged / timed.
   selectedIndex     Int?
-  guessed           Boolean  @default(false)
+  guessed           Boolean   @default(false)
   correct           Boolean?
-  flagged           Boolean  @default(false)
-  timeSpentMs       Int      @default(0)
+  flagged           Boolean   @default(false)
+  timeSpentMs       Int       @default(0)
   answeredAt        DateTime?
-  updatedAt         DateTime @updatedAt
+  updatedAt         DateTime  @updatedAt
 
   sessionQuestion SessionQuestion @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
   session         PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -274,19 +279,19 @@ model RateLimit {
 }
 
 model AiRun {
-  id           String    @id @default(cuid())
-  kind         AiRunKind
-  model        String
-  requestedById String?
-  questionCount Int      @default(0)
-  succeeded    Int       @default(0)
-  failed       Int       @default(0)
-  inputTokens  Int       @default(0)
-  outputTokens Int       @default(0)
-  cacheReadTokens Int    @default(0)
-  startedAt    DateTime  @default(now())
-  finishedAt   DateTime?
-  error        String?
+  id              String    @id @default(cuid())
+  kind            AiRunKind
+  model           String
+  requestedById   String?
+  questionCount   Int       @default(0)
+  succeeded       Int       @default(0)
+  failed          Int       @default(0)
+  inputTokens     Int       @default(0)
+  outputTokens    Int       @default(0)
+  cacheReadTokens Int       @default(0)
+  startedAt       DateTime  @default(now())
+  finishedAt      DateTime?
+  error           String?
 
   requestedBy User?          @relation(fields: [requestedById], references: [id], onDelete: SetNull)
   suggestions AiSuggestion[]
@@ -312,8 +317,8 @@ model AiSuggestion {
   // [{ questionId, similarity }]
   duplicates          Json?
 
-  createdAt  DateTime  @default(now())
-  resolvedAt DateTime?
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
   resolvedById String?
 
   run      AiRun    @relation(fields: [runId], references: [id], onDelete: Cascade)
@@ -346,4 +351,38 @@ model QuestionReport {
   @@index([status, createdAt])
   @@index([questionId, status])
   @@index([userId, questionId])
+}
+
+// ---------------------------------------------------------------------------------------------
+// Premium unlock payments
+// ---------------------------------------------------------------------------------------------
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+// One row per attempt to pay. The reference is what Paystack sends back in its webhook, so it is unique:
+// that is what makes receiving the same webhook twice harmless.
+model Payment {
+  id               String        @id @default(cuid())
+  reference        String        @unique
+  userId           String
+  amountPesewas    Int
+  currency         String        @default("GHS")
+  status           PaymentStatus @default(PENDING)
+  paystackId       String?
+  channel          String?
+  feePesewas       Int?
+  paidAt           DateTime?
+  // Money arrived but could not unlock anything (wrong amount, or the account was already premium).
+  problem          String?
+  problemHandledAt DateTime?
+  createdAt        DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
 }

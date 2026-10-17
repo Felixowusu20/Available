@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 
-export type CurrentUser = { id: string; email: string; name: string | null; role: "STUDENT" | "ADMIN" };
+/** `premium`: the account has the one-time unlock (admins always count as premium). */
+export type CurrentUser = { id: string; email: string; name: string | null; role: "STUDENT" | "ADMIN"; premium: boolean };
 
 /**
  * Resolves the signed-in user from the database (not just the JWT), so a demoted admin
@@ -14,10 +15,10 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   if (!id) return null;
   const user = await db.user.findUnique({
     where: { id },
-    select: { id: true, email: true, name: true, role: true, tokenVersion: true },
+    select: { id: true, email: true, name: true, role: true, tokenVersion: true, premiumAt: true },
   });
   if (!user || user.tokenVersion !== session.tv) return null;
-  return { id: user.id, email: user.email, name: user.name, role: user.role };
+  return { id: user.id, email: user.email, name: user.name, role: user.role, premium: user.role === "ADMIN" || user.premiumAt !== null };
 }
 
 /** For pages / server components: redirects to /login when signed out. */

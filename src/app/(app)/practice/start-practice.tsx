@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { topicKey, type Availability, type Count } from "@/lib/practice/topic-counts";
@@ -26,6 +27,7 @@ export function StartPractice({
   left,
   missedCount,
   bookmarkCount,
+  premium,
 }: {
   tree: Tree;
   secondsPerQuestion: number;
@@ -34,8 +36,12 @@ export function StartPractice({
   left: Availability;
   missedCount: number;
   bookmarkCount: number;
+  /** Has the one-time unlock: section practice and the "questions left" counters. */
+  premium: boolean;
 }) {
   const router = useRouter();
+  // Free accounts do not see how many questions are left; they see an invitation instead.
+  const countLabel = (c: Count | undefined) => (premium ? leftLabel(c) : "");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -105,6 +111,17 @@ export function StartPractice({
         </p>
       )}
 
+      {!premium && (
+        <section className="card flex flex-wrap items-center justify-between gap-3 border-accent p-4" aria-label="Premium">
+          <p className="text-sm">
+            <strong>Unlock premium once for GHS 10</strong>: practise one section on its own, see how many questions are left in every topic, and get priority questions first.
+          </p>
+          <Link href="/unlock" className="btn !min-h-10 !px-4 !py-1 text-sm">
+            See what you get
+          </Link>
+        </section>
+      )}
+
       <section className="card space-y-3 p-4" aria-labelledby="mock-h">
         <h2 id="mock-h" className="text-lg font-semibold">
           Mock exam
@@ -142,7 +159,7 @@ export function StartPractice({
                   <input type="radio" name="section" checked={section === t.section} onChange={() => setSection(t.section)} />
                   {t.section === "PRECLINICAL" ? "Preclinical" : "Clinical"}
                 </span>
-                <span className="pl-6 text-xs text-muted">{leftLabel(totals)}</span>
+                <span className="pl-6 text-xs text-muted">{countLabel(totals)}</span>
               </label>
             );
           })}
@@ -169,14 +186,20 @@ export function StartPractice({
           </div>
           {modeChoice(sectionMode, setSectionMode, "sectionmode")}
         </div>
-        <button
-          className="btn w-full sm:w-auto"
-          disabled={busy !== null || sectionTotals.total === 0}
-          onClick={() => start("section", { kind: "TOPIC", sections: [section], count: sectionCount, mode: sectionMode })}
-        >
-          {busy === "section" ? "Starting…" : `Start ${sectionCount} ${sectionName} questions`}
-        </button>
-        {sectionTotals.total > 0 && (
+        {premium ? (
+          <button
+            className="btn w-full sm:w-auto"
+            disabled={busy !== null || sectionTotals.total === 0}
+            onClick={() => start("section", { kind: "TOPIC", sections: [section], count: sectionCount, mode: sectionMode })}
+          >
+            {busy === "section" ? "Starting…" : `Start ${sectionCount} ${sectionName} questions`}
+          </button>
+        ) : (
+          <Link href="/unlock" className="btn w-full sm:w-auto">
+            Premium: unlock for GHS 10
+          </Link>
+        )}
+        {premium && sectionTotals.total > 0 && (
           <p className="text-sm text-muted" aria-live="polite">
             {sectionTotals.left} {sectionName} question{sectionTotals.left === 1 ? "" : "s"} you have not answered yet.
             {sectionTotals.left < sectionCount && sectionTotals.total >= sectionCount && " Beyond that, questions you have already answered come round again."}
@@ -195,7 +218,7 @@ export function StartPractice({
             <details key={section} className="rounded-lg border border-line">
               <summary className="flex cursor-pointer select-none items-center justify-between gap-2 px-3 py-2 font-medium">
                 <span>{section === "PRECLINICAL" ? "Preclinical" : "Clinical"}</span>
-                <span className="text-sm font-normal text-muted">{leftLabel(sumOf(ds))}</span>
+                <span className="text-sm font-normal text-muted">{countLabel(sumOf(ds))}</span>
               </summary>
               <div className="space-y-2 px-3 pb-3">
                 {ds.map((d) => (
@@ -210,7 +233,7 @@ export function StartPractice({
                         className="size-5"
                       />
                       <span>{d.name}</span>
-                      <span className="ml-auto text-sm text-muted">{leftLabel(left.disciplines[d.name])}</span>
+                      <span className="ml-auto text-sm text-muted">{countLabel(left.disciplines[d.name])}</span>
                     </summary>
                     {d.subtopics.length > 1 && (
                       <ul className="grid gap-1 px-2 pb-2 pl-9 sm:grid-cols-2">
@@ -227,7 +250,7 @@ export function StartPractice({
                                   className="size-4"
                                 />
                                 <span>{s}</span>
-                                <span className="ml-auto text-xs text-muted">{leftLabel(left.subtopics[topicKey(d.name, s)])}</span>
+                                <span className="ml-auto text-xs text-muted">{countLabel(left.subtopics[topicKey(d.name, s)])}</span>
                               </label>
                             </li>
                           );
@@ -272,7 +295,7 @@ export function StartPractice({
         >
           {busy === "topic" ? "Starting…" : picked === 0 ? "Choose at least one topic" : `Start ${topicCount} questions`}
         </button>
-        {picked > 0 && (
+        {premium && picked > 0 && (
           <p className="text-sm text-muted" aria-live="polite">
             {newInSelection} question{newInSelection === 1 ? "" : "s"} you have not answered yet in your selection.
             {newInSelection < topicCount && " Beyond that, questions you have already answered come round again."}

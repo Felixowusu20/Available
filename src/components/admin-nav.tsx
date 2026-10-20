@@ -13,7 +13,7 @@ const links: { href: string; label: string; icon: IconName; exact?: boolean }[] 
   { href: "/admin/ai", label: "AI review", icon: "spark" },
 ];
 
-export function AdminSidebar({ email, signOutAction }: { email: string; signOutAction: () => Promise<void> }) {
+export function AdminSidebar({ email, reported, signOutAction }: { email: string; reported: number; signOutAction: () => Promise<void> }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [desktop, setDesktop] = useState(false);
@@ -65,7 +65,7 @@ export function AdminSidebar({ email, signOutAction }: { email: string; signOutA
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3" aria-label="Admin">
-          {links.map((link) => {
+          {[...links, { href: "/admin/reports", label: reported > 0 ? `Reports (${reported})` : "Reports", icon: "practice" as const }, { href: "/admin/premium", label: "Premium", icon: "check" as const }].map((link) => {
             const active = link.exact ? pathname === link.href : pathname === link.href || pathname.startsWith(`${link.href}/`);
             return (
               <Link

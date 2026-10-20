@@ -1,10 +1,12 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { hasPremium, withPriorityFor } from "@/lib/premium/access";
 import { env } from "@/lib/env";
 import { composeList, composeMock, randomOptionOrder, type Composed } from "@/lib/practice/compose";
 import { ServiceError } from "@/lib/practice/http";
 import type { CreateSessionInput } from "@/lib/practice/schemas";
 import { summarise, type ResultRow } from "@/lib/practice/scoring";
+import { openReportedIds } from "@/lib/reports";
 import { deadlineOf, isPastGrace, timeLimitSeconds } from "@/lib/practice/timing";
 
 type Session = NonNullable<Awaited<ReturnType<typeof findOwned>>>;
@@ -25,6 +27,8 @@ export type QuestionPayload = {
   guessed: boolean;
   flagged: boolean;
   bookmarked: boolean;
+  /** This student has an open report on the question. */
+  reported: boolean;
   timeSpentMs: number;
   feedback?: Feedback;
 };
@@ -125,22 +129,26 @@ async function missedQuestionIds(userId: string): Promise<string[]> {
 
 export async function createSession(userId: string, input: CreateSessionInput): Promise<string> {
   const seen = await seenQuestionIds(userId);
+  const premium = await hasPremium(userId);
   let composed: Composed[];
   let filter: Prisma.InputJsonValue | undefined;
 
   if (input.kind === "MOCK") {
-    const rows = await db.question.findMany({ where: { status: "PUBLISHED", section: { not: null } }, select: { id: true, section: true } });
-    const pool = rows.flatMap((r) => (r.section ? [{ id: r.id, section: r.section }] : []));
-    composed = composeMock(pool, input.size, seen);
+    const rows = await db.question.findMany({ where: { status: "PUBLISHED", section: { not: null } }, select: { id: true, section: true, highPriority: true } });
+    const pool = rows.flatMap((r) => (r.section ? [{ id: r.id, section: r.section, highPriority: r.highPriority }] : []));
+    composed = composeMock(withPriorityFor(pool, premium), input.size, seen);
   } else if (input.kind === "TOPIC") {
+    const sections = input.sections ?? [];
+    if (sections.length > 0 && !premium) throw new ServiceError(402, "Practising one section is a premium feature. Unlock premium for GHS 10 to use it.");
     const or: Prisma.QuestionWhereInput[] = [
+      ...(sections.length ? [{ section: { in: sections } }] : []),
       ...(input.disciplines.length ? [{ discipline: { in: input.disciplines } }] : []),
       ...input.subtopics.map((s) => ({ discipline: s.discipline, subtopic: s.subtopic })),
     ];
-    const pool = await db.question.findMany({ where: { status: "PUBLISHED", OR: or }, select: { id: true } });
+    const pool = await db.question.findMany({ where: { status: "PUBLISHED", OR: or }, select: { id: true, highPriority: true } });
     if (pool.length === 0) throw new ServiceError(422, "No published questions match that selection yet.");
-    composed = composeList(pool, input.count, seen);
-    filter = { disciplines: input.disciplines, subtopics: input.subtopics };
+    composed = composeList(withPriorityFor(pool, premium), input.count, seen);
+    filter = { sections, disciplines: input.disciplines, subtopics: input.subtopics };
   } else if (input.kind === "REDO_MISSED") {
     const ids = await missedQuestionIds(userId);
     if (ids.length === 0) throw new ServiceError(422, "You have no missed questions to redo yet.");
@@ -213,7 +221,11 @@ export async function getQuestions(userId: string, id: string, from: number, cou
     orderBy: { position: "asc" },
     include: { question: true, answer: true },
   });
-  const marks = await db.bookmark.findMany({ where: { userId, questionId: { in: rows.map((r) => r.questionId) } }, select: { questionId: true } });
+  const ids = rows.map((r) => r.questionId);
+  const [marks, reported] = await Promise.all([
+    db.bookmark.findMany({ where: { userId, questionId: { in: ids } }, select: { questionId: true } }),
+    openReportedIds(userId, ids),
+  ]);
   const marked = new Set(marks.map((m) => m.questionId));
 
   return rows.map((r) => {
@@ -227,6 +239,7 @@ export async function getQuestions(userId: string, id: string, from: number, cou
       guessed: r.answer?.guessed ?? false,
       flagged: r.answer?.flagged ?? false,
       bookmarked: marked.has(r.questionId),
+      reported: reported.has(r.questionId),
       timeSpentMs: r.answer?.timeSpentMs ?? 0,
       feedback: isRevealed(s, answered) ? feedbackFor(r.optionOrder, r.question) : undefined,
     };
@@ -341,6 +354,7 @@ export type ResultQuestion = {
   explanation: string;
   guessed: boolean;
   flagged: boolean;
+  reported: boolean;
   timeSpentMs: number;
   section: "PRECLINICAL" | "CLINICAL";
   discipline: string;
@@ -356,6 +370,7 @@ export async function getResults(userId: string, id: string) {
     orderBy: { position: "asc" },
     include: { question: true, answer: true },
   });
+  const reported = await openReportedIds(userId, rows.map((r) => r.questionId));
   const questions: ResultQuestion[] = rows.map((r) => {
     const answered = r.answer?.selectedIndex != null;
     return {
@@ -368,6 +383,7 @@ export async function getResults(userId: string, id: string) {
       explanation: r.question.explanation,
       guessed: r.answer?.guessed ?? false,
       flagged: r.answer?.flagged ?? false,
+      reported: reported.has(r.questionId),
       timeSpentMs: r.answer?.timeSpentMs ?? 0,
       section: r.question.section ?? "PRECLINICAL",
       discipline: r.question.discipline ?? "Untagged",

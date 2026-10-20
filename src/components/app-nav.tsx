@@ -10,7 +10,7 @@ const links: { href: string; label: string; icon: IconName }[] = [
   { href: "/practice", label: "Practice", icon: "practice" },
 ];
 
-export function AppNav({ name, signOutAction }: { name: string | null; signOutAction: () => Promise<void> }) {
+export function AppNav({ name, premium, signOutAction }: { name: string | null; premium: boolean; signOutAction: () => Promise<void> }) {
   const pathname = usePathname();
   const first = name?.split(" ")[0];
   return (
@@ -36,6 +36,11 @@ export function AppNav({ name, signOutAction }: { name: string | null; signOutAc
               </Link>
             );
           })}
+          {!premium && (
+            <Link href="/unlock" className="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-accent hover:text-fg">
+              Premium
+            </Link>
+          )}
         </nav>
         <div className="ml-auto flex items-center gap-1">
           {first && <span className="hidden px-2 text-sm text-muted sm:inline">{first}</span>}

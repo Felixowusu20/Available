@@ -1,10 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { topicKey, type Availability, type Count } from "@/lib/practice/topic-counts";
 
 type Tree = { section: "PRECLINICAL" | "CLINICAL"; disciplines: { name: string; subtopics: string[] }[] }[];
 type Mode = "LEARN" | "EXAM";
+
+/** "50 left", "All done" or "No questions yet" for one topic. */
+function leftLabel(c: Count | undefined) {
+  if (!c || c.total === 0) return "No questions yet";
+  return c.left === 0 ? "All done" : `${c.left} left`;
+}
 
 function duration(totalSeconds: number) {
   const h = Math.floor(totalSeconds / 3600);
@@ -16,16 +24,24 @@ export function StartPractice({
   tree,
   secondsPerQuestion,
   available,
+  left,
   missedCount,
   bookmarkCount,
+  premium,
 }: {
   tree: Tree;
   secondsPerQuestion: number;
   available: { PRECLINICAL: number; CLINICAL: number };
+  /** Per topic: published questions and how many this student has not answered yet. */
+  left: Availability;
   missedCount: number;
   bookmarkCount: number;
+  /** Has the one-time unlock: section practice and the "questions left" counters. */
+  premium: boolean;
 }) {
   const router = useRouter();
+  // Free accounts do not see how many questions are left; they see an invitation instead.
+  const countLabel = (c: Count | undefined) => (premium ? leftLabel(c) : "");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +50,9 @@ export function StartPractice({
   const [topicCount, setTopicCount] = useState(20);
   const [disciplines, setDisciplines] = useState<Set<string>>(new Set());
   const [subtopics, setSubtopics] = useState<Set<string>>(new Set()); // "Discipline|Subtopic"
+  const [section, setSection] = useState<"PRECLINICAL" | "CLINICAL">("PRECLINICAL");
+  const [sectionCount, setSectionCount] = useState(50);
+  const [sectionMode, setSectionMode] = useState<Mode>("LEARN");
 
   async function start(label: string, body: unknown) {
     setBusy(label);
@@ -73,6 +92,15 @@ export function StartPractice({
   );
 
   const picked = disciplines.size + subtopics.size;
+  // Unanswered questions in the current selection (a whole discipline and its subtopics are never picked together).
+  const newInSelection =
+    [...disciplines].reduce((n, d) => n + (left.disciplines[d]?.left ?? 0), 0) + [...subtopics].reduce((n, k) => n + (left.subtopics[k]?.left ?? 0), 0);
+  /** Total and unanswered questions across a list of disciplines. */
+  const sumOf = (ds: Tree[number]["disciplines"]): Count =>
+    ds.reduce<Count>((acc, d) => ({ total: acc.total + (left.disciplines[d.name]?.total ?? 0), left: acc.left + (left.disciplines[d.name]?.left ?? 0) }), { total: 0, left: 0 });
+  const sectionDisciplines = tree.find((t) => t.section === section)?.disciplines ?? [];
+  const sectionTotals = sumOf(sectionDisciplines);
+  const sectionName = section === "PRECLINICAL" ? "preclinical" : "clinical";
   const mockOk = (size: number) => available.PRECLINICAL >= size / 2 && available.CLINICAL >= size / 2;
 
   return (
@@ -81,6 +109,17 @@ export function StartPractice({
         <p role="alert" className="rounded-lg bg-bad-bg p-3 text-sm text-bad">
           {error}
         </p>
+      )}
+
+      {!premium && (
+        <section className="card flex flex-wrap items-center justify-between gap-3 border-accent p-4" aria-label="Premium">
+          <p className="text-sm">
+            <strong>Unlock premium once for GHS 10</strong>: practise one section on its own, see how many questions are left in every topic, and get priority questions first.
+          </p>
+          <Link href="/unlock" className="btn !min-h-10 !px-4 !py-1 text-sm">
+            See what you get
+          </Link>
+        </section>
       )}
 
       <section className="card space-y-3 p-4" aria-labelledby="mock-h">
@@ -105,6 +144,71 @@ export function StartPractice({
         </div>
       </section>
 
+      <section className="card space-y-3 p-4" aria-labelledby="section-h">
+        <h2 id="section-h" className="text-lg font-semibold">
+          Practise one section
+        </h2>
+        <p className="text-sm text-muted">Only preclinical or only clinical questions, for example 50 preclinical.</p>
+        <fieldset className="grid grid-cols-2 gap-2">
+          <legend className="sr-only">Section</legend>
+          {tree.map((t) => {
+            const totals = sumOf(t.disciplines);
+            return (
+              <label key={t.section} className={`flex min-h-12 cursor-pointer flex-col justify-center rounded-lg border p-3 ${section === t.section ? "border-accent bg-accent/10" : "border-line"}`}>
+                <span className="flex items-center gap-2 font-medium">
+                  <input type="radio" name="section" checked={section === t.section} onChange={() => setSection(t.section)} />
+                  {t.section === "PRECLINICAL" ? "Preclinical" : "Clinical"}
+                </span>
+                <span className="pl-6 text-xs text-muted">{countLabel(totals)}</span>
+              </label>
+            );
+          })}
+        </fieldset>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="text-sm">
+            <span className="mb-1 block font-medium">Questions</span>
+            <div className="flex flex-wrap items-center gap-2">
+              {[20, 50, 100].map((n) => (
+                <button key={n} type="button" className={`btn !min-h-10 !px-3 !py-1 ${sectionCount === n ? "" : "btn-ghost"}`} aria-pressed={sectionCount === n} onClick={() => setSectionCount(n)}>
+                  {n}
+                </button>
+              ))}
+              <input
+                type="number"
+                min={5}
+                max={200}
+                value={sectionCount}
+                onChange={(e) => setSectionCount(Math.min(200, Math.max(5, Number(e.target.value) || 5)))}
+                className="input !w-24"
+                aria-label="Number of questions"
+              />
+            </div>
+          </div>
+          {modeChoice(sectionMode, setSectionMode, "sectionmode")}
+        </div>
+        {premium ? (
+          <button
+            className="btn w-full sm:w-auto"
+            disabled={busy !== null || sectionTotals.total === 0}
+            onClick={() => start("section", { kind: "TOPIC", sections: [section], count: sectionCount, mode: sectionMode })}
+          >
+            {busy === "section" ? "Starting…" : `Start ${sectionCount} ${sectionName} questions`}
+          </button>
+        ) : (
+          <Link href="/unlock" className="btn w-full sm:w-auto">
+            Premium: unlock for GHS 10
+          </Link>
+        )}
+        {premium && sectionTotals.total > 0 && (
+          <p className="text-sm text-muted" aria-live="polite">
+            {sectionTotals.left} {sectionName} question{sectionTotals.left === 1 ? "" : "s"} you have not answered yet.
+            {sectionTotals.left < sectionCount && sectionTotals.total >= sectionCount && " Beyond that, questions you have already answered come round again."}
+            {sectionTotals.total < sectionCount && ` Only ${sectionTotals.total} ${sectionName} questions are published, so you will get ${sectionTotals.total}.`}
+            {sectionMode === "EXAM" && ` Timed: ${duration(Math.min(sectionCount, sectionTotals.total) * secondsPerQuestion)}.`}
+          </p>
+        )}
+      </section>
+
       <section className="card space-y-3 p-4" aria-labelledby="topic-h">
         <h2 id="topic-h" className="text-lg font-semibold">
           Topic practice
@@ -112,7 +216,10 @@ export function StartPractice({
         <div className="space-y-2">
           {tree.map(({ section, disciplines: ds }) => (
             <details key={section} className="rounded-lg border border-line">
-              <summary className="cursor-pointer select-none px-3 py-2 font-medium">{section === "PRECLINICAL" ? "Preclinical" : "Clinical"}</summary>
+              <summary className="flex cursor-pointer select-none items-center justify-between gap-2 px-3 py-2 font-medium">
+                <span>{section === "PRECLINICAL" ? "Preclinical" : "Clinical"}</span>
+                <span className="text-sm font-normal text-muted">{countLabel(sumOf(ds))}</span>
+              </summary>
               <div className="space-y-2 px-3 pb-3">
                 {ds.map((d) => (
                   <details key={d.name} className="rounded border border-line/60">
@@ -126,6 +233,7 @@ export function StartPractice({
                         className="size-5"
                       />
                       <span>{d.name}</span>
+                      <span className="ml-auto text-sm text-muted">{countLabel(left.disciplines[d.name])}</span>
                     </summary>
                     {d.subtopics.length > 1 && (
                       <ul className="grid gap-1 px-2 pb-2 pl-9 sm:grid-cols-2">
@@ -141,7 +249,8 @@ export function StartPractice({
                                   onChange={() => toggle(subtopics, setSubtopics, key)}
                                   className="size-4"
                                 />
-                                {s}
+                                <span>{s}</span>
+                                <span className="ml-auto text-xs text-muted">{countLabel(left.subtopics[topicKey(d.name, s)])}</span>
                               </label>
                             </li>
                           );
@@ -186,6 +295,12 @@ export function StartPractice({
         >
           {busy === "topic" ? "Starting…" : picked === 0 ? "Choose at least one topic" : `Start ${topicCount} questions`}
         </button>
+        {premium && picked > 0 && (
+          <p className="text-sm text-muted" aria-live="polite">
+            {newInSelection} question{newInSelection === 1 ? "" : "s"} you have not answered yet in your selection.
+            {newInSelection < topicCount && " Beyond that, questions you have already answered come round again."}
+          </p>
+        )}
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">

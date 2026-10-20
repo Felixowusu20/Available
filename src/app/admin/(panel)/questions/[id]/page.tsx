@@ -30,6 +30,7 @@ export default async function EditQuestionPage({ params }: { params: Promise<{ i
     difficulty: q.difficulty ?? "",
     source: q.source ?? "",
     status: q.status,
+    highPriority: q.highPriority,
   };
 
   const pending = q.suggestions.filter((s) => s.status === "PENDING");
@@ -56,6 +57,16 @@ export default async function EditQuestionPage({ params }: { params: Promise<{ i
             Review them
           </Link>
           .
+        </p>
+      )}
+
+      {q._count.reports > 0 && (
+        <p className="rounded-lg bg-warn-bg p-3 text-sm text-warn" role="note">
+          Students have reported this question ({q._count.reports} open report{q._count.reports === 1 ? "" : "s"}).{" "}
+          <Link href={`/admin/reports?question=${q.id}`} className="underline">
+            Read the reports
+          </Link>
+          . They stay open until you close them there.
         </p>
       )}
 

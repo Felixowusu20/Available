@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Bar } from "@/components/bar";
+import { ReportButton } from "@/components/report-dialog";
 import { requireUser } from "@/lib/guards";
 import { pct } from "@/lib/practice/scoring";
 import { getResults } from "@/lib/practice/service";
@@ -167,6 +168,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ id: st
               <p className="text-xs text-muted">
                 {q.discipline} › {q.subtopic}
               </p>
+              <ReportButton sessionId={session.id} position={q.position} reported={q.reported} />
             </div>
           </details>
         ))}

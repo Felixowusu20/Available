@@ -31,6 +31,7 @@ export async function insertQuestionIfNew(
     difficulty: q.difficulty ?? null,
     source: q.source ?? null,
     status: q.status,
+    highPriority: q.highPriority,
     legacyTopic: q.legacyTopic ?? null,
     createdById: opts.createdById ?? null,
     publishedAt: q.status === "PUBLISHED" ? new Date() : null,

@@ -9,6 +9,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <>
       <AppNav
         name={user.name}
+        premium={user.premium}
         signOutAction={async () => {
           "use server";
           await signOut({ redirectTo: "/" });

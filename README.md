@@ -4,6 +4,8 @@ A web platform for Ghanaian medical students preparing for the **Medical and Den
 
 Students take timed mocks, learn from explanations, and see their weak topics. Admins grow the question bank with AI-assisted tagging and review.
 
+**Deploying the latest release (three new features, two database migrations): start with [HANDOVER.md](HANDOVER.md).**
+
 **Documents:** [DEPLOYMENT.md](DEPLOYMENT.md) (hosting, backups, HTTPS, troubleshooting) · [DECISIONS.md](DECISIONS.md) (choices made and why)
 
 ## What it does
@@ -14,14 +16,18 @@ Students take timed mocks, learn from explanations, and see their weak topics. A
 - **Switch exam → learn** at any point without losing answers.
 - **Mocks of 50, 100 or 200** questions: always half preclinical, half clinical, mixed, with 25 of each in every block of 50.
 - **Topic practice** by discipline and/or subtopic, **redo missed**, **bookmarks**.
+- **Questions left** shown next to every section, discipline and subtopic on the practice screen ("50 left", "All done"); the number drops as you answer, and the screen tells you how many unanswered questions your selection holds.
+- **High-priority questions**: an admin can flag questions so students meet them first (see below). Students never see the flag.
 - "I am guessing" on every question; results report guesses separately.
+- **Report a problem** on any question, while practising or from the missed questions on the results page: pick what is wrong (typo, unclear, answer or explanation looks wrong, outdated, other) and add a note.
 - Progress is saved on the server and resumes on any device.
 - Results: score, preclinical/clinical split, per-block and per-topic breakdown (weakest first), missed questions with explanations. Dashboard: history, accuracy trend, weakest topics, seen vs remaining.
 - Mobile first, light and dark theme, no UI or chart library, keyboard shortcuts on desktop (A–D or 1–4 to answer, Enter for next, F flag, B bookmark, M map).
 
 **Admins**
-- Question list with search and filters; editor; bulk status changes.
+- Question list with search and filters; editor; bulk status changes; **high priority** flag (editor checkbox, bulk mark/clear, list filter, dashboard count).
 - Import from JSON or CSV with a row-by-row preview, duplicate and near-duplicate detection. Imports always start as drafts.
+- **Reports** – questions students have reported, most reported first, with the reasons and notes. Fix the question, then close its reports as fixed or as needing no change. The Reports link shows how many questions are waiting, and the question list can be filtered to those with open reports.
 - **AI review** – tagging and quality checks (see below). AI output is only ever a suggestion; nothing is applied or published without an admin accepting it.
 - Only `PUBLISHED` questions ever reach students.
 
@@ -87,7 +93,17 @@ Admin → **Import**. A JSON file is an array of objects:
 }]
 ```
 
-Only `stem`, `options` (exactly 4) and the correct answer are required. `correct` is a letter A–D or a number 1–4; `correctIndex` is 0–3. Tags are optional and must match [taxonomy.json](taxonomy.json) (case-insensitive); untagged questions can be tagged by the AI or by hand. CSV works too (columns `stem`, `options` separated by `|` or `A`–`D`, `correct`, …). The importer shows every row's status before saving anything.
+Only `stem`, `options` (exactly 4) and the correct answer are required. `correct` is a letter A–D or a number 1–4; `correctIndex` is 0–3. Tags are optional and must match [taxonomy.json](taxonomy.json) (case-insensitive); untagged questions can be tagged by the AI or by hand. CSV works too (columns `stem`, `options` separated by `|` or `A`–`D`, `correct`, …). The importer shows every row's status before saving anything. An optional `priority` (or `highPriority`) column marks a row high priority: `high`, `true`, `yes` or `1`; anything else is normal.
+
+## High-priority questions
+
+Admins can mark any question **High priority**: tick the box in the editor, or select questions in the list and use *Mark high priority* or *Remove priority*, and filter with *High priority only*. The flag does not change what students are allowed to see. It only changes the order in which questions are drawn:
+
+1. unseen high-priority questions, then
+2. other unseen questions, then, only when the unseen ones run out,
+3. seen high-priority questions, then other seen questions.
+
+This applies to **mocks** and **topic practice**. Questions are still shuffled within a session, and in a mock they are spread across the blocks, so the 25/25 preclinical/clinical rule is unchanged. Redo-missed and bookmark sessions are the student's own lists and ignore priority. Only published questions are ever drawn, so flagging a draft has no effect until it is published. The flag is never sent to the browser.
 
 **Large files from the command line.** `scripts/import-file.ts` runs the same validation and duplicate checks as the Import screen, which is handier for thousands of questions (it can also publish the tagged ones in one step):
 
@@ -144,4 +160,4 @@ Dockerfile, docker-compose*.yml
 
 ## Security in brief
 
-Secrets live only in environment variables (never sent to the browser; `.env` is git-ignored). Passwords are hashed with argon2id; verification and reset tokens are single-use, hashed and expire. Every admin page and API route checks the admin role against the database. Students can only read their own sessions, and questions are served per session: there is no endpoint that lists the bank. Login, sign-up, password-reset and AI endpoints are rate limited. Security headers (CSP, HSTS in production, frame and content-type protection) are set in `next.config.ts`. Logs are structured JSON on stdout and never contain secrets or students' answers.
+Secrets live only in environment variables (never sent to the browser; `.env` is git-ignored). Passwords are hashed with argon2id; verification and reset tokens are single-use, hashed and expire. Every admin page and API route checks the admin role against the database. Students can only read their own sessions, and questions are served per session: there is no endpoint that lists the bank. Login, sign-up, password-reset, question-report and AI endpoints are rate limited. Security headers (CSP, HSTS in production, frame and content-type protection) are set in `next.config.ts`. Logs are structured JSON on stdout and never contain secrets or students' answers.

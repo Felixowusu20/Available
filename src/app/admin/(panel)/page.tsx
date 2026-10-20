@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AdminTeam } from "@/app/admin/admin-accounts";
 import { Icon, type IconName } from "@/components/icons";
 import { statusCounts } from "@/lib/admin/questions";
+import { countReportedQuestions } from "@/lib/reports";
 import { requireAdmin } from "@/lib/guards";
 import { aiEnabled } from "@/lib/env";
 import { db } from "@/lib/db";
@@ -16,17 +17,20 @@ const steps = [
 
 export default async function AdminHome() {
   const user = await requireAdmin();
-  const [counts, pendingSuggestions, users, admins] = await Promise.all([
+  const [counts, pendingSuggestions, users, admins, reported] = await Promise.all([
     statusCounts(),
     db.aiSuggestion.count({ where: { status: "PENDING" } }),
     db.user.count(),
     db.user.findMany({ where: { role: "ADMIN" }, orderBy: { createdAt: "asc" }, select: { id: true, email: true, name: true } }),
+    countReportedQuestions(),
   ]);
   const tiles: { label: string; value: number; href: string; icon: IconName }[] = [
     { label: "Published", value: counts.PUBLISHED, href: "/admin/questions?status=PUBLISHED", icon: "check" },
     { label: "In review", value: counts.IN_REVIEW, href: "/admin/questions?status=IN_REVIEW", icon: "shield" },
     { label: "Drafts", value: counts.DRAFT, href: "/admin/questions?status=DRAFT", icon: "practice" },
     { label: "Untagged", value: counts.untagged, href: "/admin/questions?untagged=1", icon: "bank" },
+    { label: "High priority", value: counts.highPriority, href: "/admin/questions?priority=1&status=PUBLISHED", icon: "spark" },
+    { label: "Reported", value: reported, href: "/admin/reports", icon: "practice" },
     { label: "Retired", value: counts.RETIRED, href: "/admin/questions?status=RETIRED", icon: "logout" },
     { label: "AI to review", value: pendingSuggestions, href: "/admin/ai", icon: "spark" },
   ];

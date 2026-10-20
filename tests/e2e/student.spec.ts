@@ -60,7 +60,7 @@ test.describe("practice", () => {
   test("learn mode: answer with the keyboard, see the explanation, finish and read the results", async ({ page }) => {
     await logIn(page, await createUser());
     await page.goto("/practice");
-    await page.getByText("Preclinical", { exact: true }).click(); // open the section
+    await page.locator("summary").filter({ hasText: /^Preclinical/ }).click(); // open the section
     await page.getByLabel("All of Anatomy").check();
     await page.getByLabel("Questions", { exact: true }).fill("5");
     await page.getByRole("button", { name: /Start 5 questions/ }).click();
@@ -83,10 +83,93 @@ test.describe("practice", () => {
     await expect(page.getByText("Topics, weakest first")).toBeVisible();
   });
 
+  test("a student reports a question, an admin reads it and closes it", async ({ page, browser }) => {
+    const student = await createUser();
+    await logIn(page, student);
+    await page.goto("/practice");
+    await page.locator("summary").filter({ hasText: /^Preclinical/ }).click();
+    await page.getByLabel("All of Anatomy").check();
+    await page.getByLabel("Questions", { exact: true }).fill("5");
+    await page.getByRole("button", { name: /Start 5 questions/ }).click();
+    await runnerReady(page);
+
+    // Before the answer is shown, the student cannot judge the answer key, so that reason is not offered.
+    await page.getByRole("button", { name: "Report a problem" }).click();
+    const dialog = page.getByRole("dialog"); // its name changes to "Thank you" once the report is sent
+    await expect(dialog.getByRole("heading", { name: "Report a problem with this question" })).toBeVisible();
+    await expect(dialog.getByLabel("The correct answer looks wrong")).toHaveCount(0);
+    await dialog.getByRole("button", { name: "Send report" }).click();
+    await expect(appAlert(page)).toContainText("Choose what is wrong");
+    await dialog.getByLabel("Typo or wording error").check();
+    await dialog.getByRole("textbox", { name: /Details/ }).fill("e2e: a word is misspelled");
+    await dialog.getByRole("button", { name: "Send report" }).click();
+    await expect(dialog.getByText("Your report was sent.")).toBeVisible();
+    await dialog.getByRole("button", { name: "Close" }).click();
+    await expect(page.getByRole("button", { name: "Reported", exact: true })).toBeVisible();
+
+    // After answering, the key and explanation are shown, so "the answer looks wrong" is offered, and a second report replaces the first.
+    await page.keyboard.press("a");
+    await expect(page.getByText(/^(Correct|Incorrect)/)).toBeVisible();
+    await page.getByRole("button", { name: "Reported", exact: true }).click();
+    await expect(dialog.getByText(/already reported this question/)).toBeVisible();
+    await dialog.getByLabel("The correct answer looks wrong").check();
+    await dialog.getByRole("textbox", { name: /Details/ }).fill("e2e: the key should be C");
+    await dialog.getByRole("button", { name: "Send report" }).click();
+    await dialog.getByRole("button", { name: "Close" }).click();
+
+    // The admin sees one question with one (replaced) report from this student.
+    const ctx = await browser.newContext();
+    const admin = await ctx.newPage();
+    await logIn(admin, await createUser("ADMIN"), /\/admin$/);
+    await admin.goto("/admin/reports");
+    await expect(admin.getByRole("link", { name: "Reports (1)" })).toBeVisible();
+    const card = admin.getByRole("article", { name: "Reported question" });
+    await expect(card).toHaveCount(1);
+    await expect(card.getByText("e2e: the key should be C")).toBeVisible();
+    await expect(card.getByText("e2e: a word is misspelled")).toHaveCount(0);
+    await expect(card.getByText(student.email)).toBeVisible();
+
+    await card.getByPlaceholder(/What you changed/).fill("Corrected the key");
+    await card.getByRole("button", { name: "Mark fixed" }).click();
+    await expect(admin.getByText("Nothing is waiting. No open reports.")).toBeVisible();
+    await admin.getByRole("link", { name: "Closed" }).click();
+    await expect(admin.getByText("Admin note: Corrected the key")).toBeVisible();
+    await ctx.close();
+  });
+
+  test("the practice screen shows how many questions are left in each topic and the number drops as you answer", async ({ page }) => {
+    await logIn(page, await createUser());
+    await page.goto("/practice");
+    await page.locator("summary").filter({ hasText: /^Preclinical/ }).click();
+    const anatomy = page.locator("summary").filter({ hasText: "Anatomy" });
+    const physiology = page.locator("summary").filter({ hasText: "Physiology" });
+    await expect(anatomy).toContainText("30 left");
+    await expect(physiology).toContainText("30 left");
+    await expect(page.locator("summary").filter({ hasText: "Preclinical" })).toContainText("60 left");
+
+    await page.getByLabel("All of Anatomy").check();
+    await page.getByLabel("Questions", { exact: true }).fill("5");
+    await expect(page.getByText(/30 questions you have not answered yet in your selection/)).toBeVisible();
+    await page.getByRole("button", { name: /Start 5 questions/ }).click();
+    await runnerReady(page);
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.press("a");
+      await expect(page.getByText(/^(Correct|Incorrect)/)).toBeVisible();
+      if (i < 4) await page.keyboard.press("Enter");
+    }
+    await finishFromRunner(page);
+
+    await page.goto("/practice");
+    await page.locator("summary").filter({ hasText: /^Preclinical/ }).click();
+    await expect(anatomy).toContainText("25 left"); // 5 answered
+    await expect(physiology).toContainText("30 left"); // untouched
+    await expect(page.locator("summary").filter({ hasText: "Preclinical" })).toContainText("55 left");
+  });
+
   test("a learn-mode answer cannot be changed once given", async ({ page }) => {
     await logIn(page, await createUser());
     await page.goto("/practice");
-    await page.getByText("Preclinical", { exact: true }).click();
+    await page.locator("summary").filter({ hasText: /^Preclinical/ }).click();
     await page.getByLabel("All of Physiology").check();
     await page.getByRole("button", { name: /Start 20 questions/ }).click();
     await runnerReady(page);
@@ -143,7 +226,7 @@ test.describe("practice", () => {
   test("the dashboard shows finished sessions and what is left to see", async ({ page }) => {
     await logIn(page, await createUser());
     await page.goto("/practice");
-    await page.getByText("Clinical", { exact: true }).click();
+    await page.locator("summary").filter({ hasText: /^Clinical/ }).click();
     await page.getByLabel("All of Surgery").check();
     await page.getByRole("button", { name: /Start 20 questions/ }).click();
     await runnerReady(page);
@@ -229,5 +312,11 @@ test.describe("access control and presentation", () => {
     await page.getByRole("button", { name: "Map" }).click();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, "runner scrolls sideways").toBeLessThanOrEqual(0);
+
+    await page.getByRole("button", { name: "Map" }).click(); // close the map
+    await page.getByRole("button", { name: "Report a problem" }).click();
+    await expect(page.getByRole("button", { name: "Send report" })).toBeInViewport();
+    const dialogOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(dialogOverflow, "report dialog scrolls sideways").toBeLessThanOrEqual(0);
   });
 });

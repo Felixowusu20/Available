@@ -19,6 +19,8 @@ export const questionBaseShape = {
   difficulty: z.enum(DIFFICULTY_VALUES).nullish(),
   source: z.string().trim().max(300).nullish(),
   status: z.enum(STATUS_VALUES).default("DRAFT"),
+  /** Admin-set: unseen high-priority questions are drawn before other unseen ones. */
+  highPriority: z.boolean().default(false),
   legacyTopic: z.string().trim().max(200).nullish(),
 };
 

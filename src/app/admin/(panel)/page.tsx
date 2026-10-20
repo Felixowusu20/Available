@@ -2,6 +2,8 @@ import Link from "next/link";
 import { AdminTeam } from "@/app/admin/admin-accounts";
 import { Icon, type IconName } from "@/components/icons";
 import { statusCounts } from "@/lib/admin/questions";
+import { formatGhs } from "@/lib/money";
+import { paymentSummary } from "@/lib/premium/admin";
 import { countReportedQuestions } from "@/lib/reports";
 import { requireAdmin } from "@/lib/guards";
 import { aiEnabled } from "@/lib/env";
@@ -17,12 +19,13 @@ const steps = [
 
 export default async function AdminHome() {
   const user = await requireAdmin();
-  const [counts, pendingSuggestions, users, admins, reported] = await Promise.all([
+  const [counts, pendingSuggestions, users, admins, reported, payments] = await Promise.all([
     statusCounts(),
     db.aiSuggestion.count({ where: { status: "PENDING" } }),
     db.user.count(),
     db.user.findMany({ where: { role: "ADMIN" }, orderBy: { createdAt: "asc" }, select: { id: true, email: true, name: true } }),
     countReportedQuestions(),
+    paymentSummary(),
   ]);
   const tiles: { label: string; value: number; href: string; icon: IconName }[] = [
     { label: "Published", value: counts.PUBLISHED, href: "/admin/questions?status=PUBLISHED", icon: "check" },
@@ -85,6 +88,20 @@ export default async function AdminHome() {
         </p>
         <div className="mt-4">
           <AdminTeam admins={admins} currentId={user.id} />
+        </div>
+      </section>
+      <section className="card p-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Payments</h2>
+            <p className="mt-1 text-sm text-muted">
+              {formatGhs(payments.collected)} collected from {payments.paidCount} payment{payments.paidCount === 1 ? "" : "s"}. Paystack fees {formatGhs(payments.fees)}. You keep {formatGhs(payments.net)}.
+              {payments.pendingCount > 0 ? ` ${payments.pendingCount} still waiting.` : ""}
+            </p>
+          </div>
+          <Link href="/admin/premium" className="btn btn-ghost">
+            Payment record
+          </Link>
         </div>
       </section>
       <p className="text-sm text-muted">

@@ -28,6 +28,38 @@ export function listPremiumUsers() {
   return db.user.findMany({ where: { premiumAt: { not: null } }, orderBy: { premiumAt: "desc" }, take: 200, select: { id: true, email: true, name: true, premiumAt: true, premiumSource: true } });
 }
 
+const paymentSelect = {
+  id: true,
+  reference: true,
+  amountPesewas: true,
+  status: true,
+  channel: true,
+  feePesewas: true,
+  paidAt: true,
+  problem: true,
+  problemHandledAt: true,
+  createdAt: true,
+  user: { select: { email: true, name: true } },
+} as const;
+
+/** Newest payment attempts, including ones that are still waiting or did not go through. */
+export function listPayments() {
+  return db.payment.findMany({ orderBy: { createdAt: "desc" }, take: 100, select: paymentSelect });
+}
+
+/** Totals across every payment, not just the rows shown on the page. */
+export async function paymentSummary() {
+  const [paidCount, paid, pendingCount, failedCount] = await Promise.all([
+    db.payment.count({ where: { status: "SUCCESS" } }),
+    db.payment.aggregate({ where: { status: "SUCCESS" }, _sum: { amountPesewas: true, feePesewas: true } }),
+    db.payment.count({ where: { status: "PENDING" } }),
+    db.payment.count({ where: { status: "FAILED" } }),
+  ]);
+  const collected = paid._sum.amountPesewas ?? 0;
+  const fees = paid._sum.feePesewas ?? 0;
+  return { collected, fees, net: collected - fees, paidCount, pendingCount, failedCount };
+}
+
 /** Payments an admin has to look at: flagged ones, and ones still unconfirmed after ten minutes. */
 export async function listPaymentIssues(now = new Date()) {
   const stale = new Date(now.getTime() - 10 * 60 * 1000);

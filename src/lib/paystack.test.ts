@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { estimateFee, formatGhs } from "./money";
-import { paystackMode, verifySignature } from "./paystack";
+import { livePaymentsAllowed, paystackMode, verifySignature } from "./paystack";
 
 const SECRET = "sk_test_unit_secret";
 const sign = (body: string, secret = SECRET) => createHmac("sha512", secret).update(body).digest("hex");
@@ -36,6 +36,16 @@ describe("paystackMode", () => {
     expect(paystackMode("sk_live_abc")).toBe("live");
     expect(paystackMode("pk_test_abc")).toBeNull();
     expect(paystackMode("")).toBeNull();
+  });
+});
+
+describe("livePaymentsAllowed", () => {
+  it("lets Vercel production use a live key, and keeps live keys off everywhere else", () => {
+    expect(livePaymentsAllowed({ secret: "sk_live_abc", allowLive: false, vercelEnv: "production" })).toBe(true);
+    expect(livePaymentsAllowed({ secret: "sk_live_abc", allowLive: true, vercelEnv: "preview" })).toBe(true);
+    expect(livePaymentsAllowed({ secret: "sk_live_abc", allowLive: false, vercelEnv: "preview" })).toBe(false);
+    expect(livePaymentsAllowed({ secret: "sk_live_abc", allowLive: false, vercelEnv: undefined })).toBe(false);
+    expect(livePaymentsAllowed({ secret: "sk_test_abc", allowLive: false, vercelEnv: "preview" })).toBe(true);
   });
 });
 

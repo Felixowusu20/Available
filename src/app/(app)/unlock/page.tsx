@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { env, paystackEnabled } from "@/lib/env";
+import { paystackEnabled } from "@/lib/env";
 import { requireUser } from "@/lib/guards";
-import { formatGhs } from "@/lib/money";
+import { formatGhs, PREMIUM_PRICE_PESEWAS } from "@/lib/money";
 import { paystackMode } from "@/lib/paystack";
 import { PREMIUM_FEATURES } from "@/lib/premium/access";
 import { UnlockButton } from "./unlock-button";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function UnlockPage() {
   const user = await requireUser();
-  const price = formatGhs(env().PREMIUM_PRICE_PESEWAS);
+  const price = formatGhs(PREMIUM_PRICE_PESEWAS);
 
   return (
     <main className="mx-auto max-w-2xl space-y-4 px-4 py-6">

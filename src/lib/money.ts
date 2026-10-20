@@ -1,5 +1,8 @@
 // Money is always stored and added up as whole pesewas (1 cedi = 100 pesewas), never as decimals, so sums are exact.
 
+/** One-time premium price. Students pay GHS 10. Paystack takes its fee out of this; it is not added on top. */
+export const PREMIUM_PRICE_PESEWAS = 1000;
+
 export const PAYSTACK_FEE_RATE = 0.0195; // Paystack's local-transaction fee in Ghana: 1.95%
 
 /** 5000 -> "GHS 50.00" */

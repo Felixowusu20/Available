@@ -26,10 +26,19 @@ export function paystackMode(secret = env().PAYSTACK_SECRET_KEY): "test" | "live
   return null;
 }
 
+/** Real charges are allowed for the live key stored on Vercel production, or when PAYSTACK_ALLOW_LIVE is set. */
+export function livePaymentsAllowed(opts?: { secret?: string; allowLive?: boolean; vercelEnv?: string | undefined }): boolean {
+  const secret = opts?.secret ?? env().PAYSTACK_SECRET_KEY;
+  if (paystackMode(secret) !== "live") return true;
+  const allowLive = opts?.allowLive ?? env().PAYSTACK_ALLOW_LIVE;
+  const vercelEnv = opts && "vercelEnv" in opts ? opts.vercelEnv : process.env.VERCEL_ENV;
+  return allowLive || vercelEnv === "production";
+}
+
 function secretKey(): string {
   const key = env().PAYSTACK_SECRET_KEY;
   if (!key) throw new ServiceError(503, "Payments are not switched on yet.");
-  if (paystackMode(key) === "live" && !env().PAYSTACK_ALLOW_LIVE) {
+  if (!livePaymentsAllowed({ secret: key })) {
     throw new ServiceError(503, "A live Paystack key is set but live payments are not allowed yet (PAYSTACK_ALLOW_LIVE).");
   }
   return key;

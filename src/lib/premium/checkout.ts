@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { db } from "@/lib/db";
 import { env, paystackEnabled } from "@/lib/env";
+import { PREMIUM_PRICE_PESEWAS } from "@/lib/money";
 import { initializeTransaction } from "@/lib/paystack";
 import { ServiceError } from "@/lib/practice/http";
 import { rateLimit } from "@/lib/rate-limit";
@@ -19,7 +20,7 @@ export async function startPremiumCheckout(user: { id: string; email: string }, 
   if (!limit.ok) throw new ServiceError(429, "Too many attempts. Please wait a few minutes and try again.");
   if (await hasPremium(user.id)) throw new ServiceError(409, "You already have premium.");
 
-  const amountPesewas = env().PREMIUM_PRICE_PESEWAS;
+  const amountPesewas = PREMIUM_PRICE_PESEWAS;
   const payment = await db.payment.create({ data: { reference: newReference(), userId: user.id, amountPesewas }, select: { id: true, reference: true } });
   try {
     const { authorizationUrl } = await initializeTransaction(

@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { requireUser } from "@/lib/guards";
 import { getAvailability } from "@/lib/practice/availability";
+import { hasPremium } from "@/lib/premium/access";
+import { settleRecentPayment } from "@/lib/premium/settle";
 import { SECTIONS, taxonomy } from "@/lib/taxonomy";
 import { StartPractice } from "./start-practice";
 
@@ -9,6 +11,8 @@ export const metadata = { title: "Practice" };
 
 export default async function PracticePage() {
   const user = await requireUser();
+  if (!user.premium) await settleRecentPayment(user.id);
+  const premium = user.premium || (await hasPremium(user.id));
 
   const [counts, bookmarkCount, answers, left] = await Promise.all([
     db.question.groupBy({ by: ["section"], where: { status: "PUBLISHED" }, _count: true }),
@@ -19,7 +23,7 @@ export default async function PracticePage() {
       select: { questionId: true, correct: true },
     }),
     // The "questions left" counters are premium, so a free account is not even sent the numbers.
-    user.premium ? getAvailability(user.id) : Promise.resolve({ disciplines: {}, subtopics: {} }),
+    premium ? getAvailability(user.id) : Promise.resolve({ disciplines: {}, subtopics: {} }),
   ]);
   const available = { PRECLINICAL: 0, CLINICAL: 0 };
   for (const c of counts) if (c.section) available[c.section] = c._count;
@@ -44,7 +48,7 @@ export default async function PracticePage() {
         secondsPerQuestion={env().EXAM_SECONDS_PER_QUESTION}
         available={available}
         left={left}
-        premium={user.premium}
+        premium={premium}
         missedCount={missedCount}
         bookmarkCount={bookmarkCount}
       />

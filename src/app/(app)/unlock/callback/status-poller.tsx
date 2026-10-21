@@ -6,16 +6,13 @@ import type { PaymentState as State } from "@/lib/premium/status";
 
 const MESSAGE: Record<State, { tone: string; title: string; body: string }> = {
   PAID: { tone: "bg-ok-bg text-ok", title: "Premium is unlocked", body: "Section practice, the questions-left counters and priority questions are now yours." },
-  WAITING: { tone: "bg-warn-bg text-warn", title: "Waiting for Paystack to confirm your payment…", body: "This usually takes a few seconds. If you approved the Mobile Money prompt, you do not need to pay again. This page updates by itself." },
+  WAITING: { tone: "bg-warn-bg text-warn", title: "Waiting for Paystack to confirm your payment…", body: "As soon as the money leaves your account, this page checks with Paystack and unlocks premium. You do not need to pay again, and an admin does not have to approve it." },
   FAILED: { tone: "bg-bad-bg text-bad", title: "The payment did not go through", body: "You have not been charged for premium. You can try again." },
   REFUNDED: { tone: "bg-warn-bg text-warn", title: "This payment was refunded", body: "Premium was removed with the refund. You can unlock it again at any time." },
   PROBLEM: { tone: "bg-bad-bg text-bad", title: "We received your payment but need to check it", body: "Please message us with the reference below and we will sort it out quickly." },
 };
 
-/**
- * Shows what the database says about a payment, asking every few seconds. It cannot unlock anything: premium is
- * set by the verified webhook on the server, and this page only reads the result.
- */
+/** Asks the server, which asks Paystack, until the payment is confirmed or clearly failed. */
 export function StatusPoller({ reference, initial }: { reference: string; initial: State }) {
   const [state, setState] = useState<State>(initial);
 
@@ -23,7 +20,8 @@ export function StatusPoller({ reference, initial }: { reference: string; initia
     if (state !== "WAITING") return;
     let stopped = false;
     let tries = 0;
-    const timer = setInterval(async () => {
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const look = async () => {
       tries++;
       try {
         const res = await fetch(`/api/premium/status?reference=${encodeURIComponent(reference)}`, { cache: "no-store" });
@@ -34,11 +32,13 @@ export function StatusPoller({ reference, initial }: { reference: string; initia
       } catch {
         /* offline: try again on the next tick */
       }
-      if (tries >= 40) clearInterval(timer); // about 2 minutes, then stop asking
-    }, 3000);
+      if (tries >= 45 && timer) clearInterval(timer);
+    };
+    timer = setInterval(() => void look(), 2000);
+    void look();
     return () => {
       stopped = true;
-      clearInterval(timer);
+      if (timer) clearInterval(timer);
     };
   }, [state, reference]);
 

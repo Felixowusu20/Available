@@ -5,6 +5,7 @@ import { createSession } from "@/lib/practice/service";
 import { grantPremium, markProblemHandled, recheckPayment, revokePremium } from "@/lib/premium/admin";
 import { startPremiumCheckout } from "@/lib/premium/checkout";
 import { applyCharge, handleWebhook } from "@/lib/premium/confirm";
+import { settleOwnPayment, settleRecentPayment } from "@/lib/premium/settle";
 import { hasPremium, withPriorityFor } from "@/lib/premium/access";
 import { makeAdmin, makeStudent, resetDb, seedBank } from "./helpers";
 
@@ -114,6 +115,33 @@ describe("the webhook", () => {
     expect(await applyCharge(charge(reference))).toBe("flagged");
     expect(await db.user.findUniqueOrThrow({ where: { id: student.id } })).toMatchObject({ premiumAt: adminDate, premiumSource: "ADMIN" });
     expect(await db.payment.findUniqueOrThrow({ where: { reference } })).toMatchObject({ status: "SUCCESS", problem: expect.stringMatching(/already had premium/) });
+  });
+
+  it("the student's own return asks Paystack and opens premium without an admin", async () => {
+    const { reference, student } = await pendingPayment();
+    const ps = fakePaystack({ verify: charge(reference) });
+    expect(await settleOwnPayment(student.id, reference, ps.fetchImpl)).toBe("PAID");
+    expect(await hasPremium(student.id)).toBe(true);
+    expect(await settleOwnPayment(student.id, reference, ps.fetchImpl)).toBe("PAID"); // asking again changes nothing
+
+    const other = await makeStudent("other@test.local", { premium: false });
+    await expect(settleOwnPayment(other.id, reference, ps.fetchImpl)).rejects.toMatchObject({ status: 404 });
+
+    const waiting = await pendingPayment("waiting@test.local");
+    const pending = fakePaystack({ verify: charge(waiting.reference, { status: "ongoing" }) });
+    expect(await settleOwnPayment(waiting.student.id, waiting.reference, pending.fetchImpl)).toBe("WAITING");
+    expect(await hasPremium(waiting.student.id)).toBe(false);
+
+    const down = fakePaystack();
+    down.fetchImpl = (async () => {
+      throw new Error("network");
+    }) as unknown as typeof fetch;
+    const stuck = await pendingPayment("stuck@test.local");
+    expect(await settleOwnPayment(stuck.student.id, stuck.reference, down.fetchImpl)).toBe("WAITING");
+    expect(await hasPremium(stuck.student.id)).toBe(false);
+
+    await settleRecentPayment(stuck.student.id, fakePaystack({ verify: charge(stuck.reference) }).fetchImpl);
+    expect(await hasPremium(stuck.student.id)).toBe(true);
   });
 
   it("an admin re-check asks Paystack and applies the answer the same way", async () => {

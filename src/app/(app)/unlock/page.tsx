@@ -3,7 +3,8 @@ import { paystackEnabled } from "@/lib/env";
 import { requireUser } from "@/lib/guards";
 import { formatGhs, PREMIUM_PRICE_PESEWAS } from "@/lib/money";
 import { paystackMode } from "@/lib/paystack";
-import { PREMIUM_FEATURES } from "@/lib/premium/access";
+import { hasPremium, PREMIUM_FEATURES } from "@/lib/premium/access";
+import { settleRecentPayment } from "@/lib/premium/settle";
 import { UnlockButton } from "./unlock-button";
 
 export const metadata = { title: "Unlock premium" };
@@ -11,6 +12,8 @@ export const dynamic = "force-dynamic";
 
 export default async function UnlockPage() {
   const user = await requireUser();
+  if (!user.premium) await settleRecentPayment(user.id);
+  const premium = user.premium || (await hasPremium(user.id));
   const price = formatGhs(PREMIUM_PRICE_PESEWAS);
 
   return (
@@ -27,7 +30,7 @@ export default async function UnlockPage() {
         ))}
       </ul>
 
-      {user.premium ? (
+      {premium ? (
         <p className="rounded-lg bg-ok-bg p-3 text-ok" role="status">
           {user.role === "ADMIN" ? "Admin accounts have every feature." : "You have premium. Everything above is unlocked."}{" "}
           <Link href="/practice" className="underline">

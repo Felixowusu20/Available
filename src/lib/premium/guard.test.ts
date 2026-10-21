@@ -26,15 +26,15 @@ describe("where premium can be set", () => {
     expect(writers).toEqual(["lib/premium/admin.ts", "lib/premium/confirm.ts"]);
   });
 
-  it("only the signed webhook route and the admin re-check can reach the code that confirms payments", () => {
+  it("only the webhook, the automatic Paystack check, and the admin re-check can reach the code that confirms payments", () => {
     const users = files(SRC)
       .filter((f) => /from "@\/lib\/premium\/confirm"/.test(readFileSync(f, "utf8")))
       .map(rel)
       .sort();
-    expect(users).toEqual(["app/api/paystack/webhook/route.ts", "lib/premium/admin.ts"]);
+    expect(users).toEqual(["app/api/paystack/webhook/route.ts", "lib/premium/admin.ts", "lib/premium/settle.ts"]);
   });
 
-  it("the pages a student lands on after paying never import it", () => {
+  it("the pages a student lands on after paying never confirm a charge themselves", () => {
     const pages = files(join(SRC, "app", "(app)", "unlock"));
     expect(pages.length).toBeGreaterThan(0);
     for (const f of pages) expect(readFileSync(f, "utf8"), rel(f)).not.toMatch(/premium\/confirm|applyCharge|handleWebhook|verifyTransaction/);

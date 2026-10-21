@@ -3,10 +3,11 @@ import { logger } from "@/lib/logger";
 import { estimateFee } from "@/lib/money";
 import { verifySignature, type ChargeData } from "@/lib/paystack";
 
-// The ONLY place a payment unlocks premium. It is reached from exactly two doors, both server to server:
-//   1. Paystack's webhook (signature checked), and
-//   2. an admin pressing "Re-check with Paystack" (which asks Paystack directly).
-// The page a student lands on after paying never calls this: it only displays what the database already says.
+// The ONLY place a payment unlocks premium. It is reached after Paystack itself has confirmed the charge:
+//   1. Paystack's signed webhook,
+//   2. the student returning from checkout, which asks Paystack server to server (lib/premium/settle.ts),
+//   3. an admin pressing "Re-check with Paystack".
+// Nothing in the browser is trusted: the amount and currency still have to match what we charged.
 
 export type ChargeOutcome = "granted" | "already-processed" | "flagged" | "not-successful" | "unknown-reference";
 

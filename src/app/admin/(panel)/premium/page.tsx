@@ -25,7 +25,7 @@ export default async function PremiumAdminPage() {
       <div>
         <h1 className="text-2xl font-bold">Premium</h1>
         <p className="text-sm text-muted">
-          Payments: {paystackEnabled() ? `Paystack is on (${paystackMode() ?? "unknown"} key).` : "Paystack is off (no PAYSTACK_SECRET_KEY set)."} Premium is set only by Paystack&apos;s confirmed webhook, by &quot;Re-check with Paystack&quot; below, or by you.
+          Payments: {paystackEnabled() ? `Paystack is on (${paystackMode() ?? "unknown"} key).` : "Paystack is off (no PAYSTACK_SECRET_KEY set)."} When Paystack confirms the money was taken, premium opens on its own. Re-check is only for a payment that stayed waiting.
         </p>
       </div>
 
